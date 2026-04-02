@@ -95,13 +95,28 @@
     button:hover {
       background: var(--button-bg-hover);
     }
+
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .ext-icon {
+      width: 48px;
+      height: 48px;
+    }
   </style>
 </head>
 
 <body>
 
   <div class="card">
-    <h2>Dictionary Lookup Settings</h2>
+    <div class="title">
+      <img src="icons/icon-128.png" alt="Extension Icon" class="ext-icon">
+      <h1>Quick Dictionary Lookup Settings</h1>
+    </div>
 
     <label for="dictionarySelect">Choose Dictionary:</label>
     <select id="dictionarySelect">
