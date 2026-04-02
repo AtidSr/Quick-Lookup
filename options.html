@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Dictionary Settings</title>
+
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #000000;
+      --input-bg: #f0f0f0;
+      --border: #cccccc;
+      --card-bg: #ffffff;
+      --shadow: rgba(0, 0, 0, 0.15);
+      --button-bg: #0060df;
+      --button-bg-hover: #003eaa;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1e;
+        --text: #ffffff;
+        --input-bg: #2a2a2a;
+        --border: #444444;
+        --card-bg: #2a2a2a;
+        --shadow: rgba(0, 0, 0, 0.5);
+        --button-bg: #0a84ff;
+        --button-bg-hover: #0060df;
+      }
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .card {
+      background: var(--card-bg);
+      padding: 25px;
+      width: 420px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px var(--shadow);
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    label {
+      font-weight: bold;
+      margin-top: 15px;
+      display: block;
+    }
+
+    select,
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      background: var(--input-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    button {
+      margin-top: 25px;
+      width: 100%;
+      padding: 10px;
+      background: var(--button-bg);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: var(--button-bg-hover);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+    <h2>Dictionary Lookup Settings</h2>
+
+    <label for="dictionarySelect">Choose Dictionary:</label>
+    <select id="dictionarySelect">
+      <option value="longman">Longman</option>
+      <option value="cambridge">Cambridge</option>
+      <option value="oxford">Oxford</option>
+      <option value="custom">Custom</option>
+    </select>
+
+
+    <div id="customFields" class="hidden">
+      <label>Custom URL Pattern:</label>
+      <input id="customUrl" type="text" placeholder="https://example.com/search/{keyword}">
+
+      <p style="font-size: 13px; opacity: 0.8; margin-top: 5px;">
+        Use <strong>{keyword}</strong> where the selected word should appear.<br>
+        Examples:<br>
+        • https://site.com/define/{keyword}<br>
+        • https://site.com/{keyword}/details<br>
+        • https://google.com/search?q={keyword}
+      </p>
+    </div>
+
+    <label for="hotkeyInput">Activation Key:</label>
+    <input id="hotkeyInput" type="text" placeholder="Press a key…" readonly>
+
+    <button id="saveBtn">Save Settings</button>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+
+</html>
