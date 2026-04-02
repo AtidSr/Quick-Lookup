@@ -2,9 +2,8 @@
   "manifest_version": 3,
   "name": "Quick Lookup",
   "version": "2.0",
-  "description": "Open a dictionary page when selecting a word and pressing ALT.",
+"description": "Instantly open a dictionary lookup for selected text using a keyboard shortcut.",
   "permissions": [
-    "tabs",
     "storage"
   ],
   "background": {
