@@ -3,147 +3,377 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Dictionary Settings</title>
-
+  <title>Quick Lookup Settings</title>
   <style>
     :root {
-      --bg: #ffffff;
-      --text: #000000;
-      --input-bg: #f0f0f0;
-      --border: #cccccc;
-      --card-bg: #ffffff;
-      --shadow: rgba(0, 0, 0, 0.15);
-      --button-bg: #0060df;
-      --button-bg-hover: #003eaa;
+      color-scheme: light dark;
+      --bg: #f9f9fb;
+      --bg-alt: #efeff5;
+      --surface: rgba(255, 255, 255, 0.88);
+      --surface-strong: #ffffff;
+      --surface-muted: #f5f6fb;
+      --border: rgba(12, 12, 13, 0.12);
+      --text: #15141a;
+      --text-muted: #5b5b66;
+      --accent: #0061e0;
+      --accent-hover: #0250bb;
+      --accent-soft: rgba(0, 97, 224, 0.12);
+      --shadow: 0 18px 44px rgba(80, 80, 120, 0.14);
     }
 
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #1e1e1e;
-        --text: #ffffff;
-        --input-bg: #2a2a2a;
-        --border: #444444;
-        --card-bg: #2a2a2a;
-        --shadow: rgba(0, 0, 0, 0.5);
-        --button-bg: #0a84ff;
-        --button-bg-hover: #0060df;
+        --bg: #1c1b22;
+        --bg-alt: #23222b;
+        --surface: rgba(43, 42, 51, 0.9);
+        --surface-strong: #2b2a33;
+        --surface-muted: #23222b;
+        --border: rgba(251, 251, 254, 0.08);
+        --text: #fbfbfe;
+        --text-muted: #c3c3cf;
+        --accent: #00ddff;
+        --accent-hover: #80ebff;
+        --accent-soft: rgba(0, 221, 255, 0.15);
+        --shadow: 0 22px 48px rgba(0, 0, 0, 0.35);
       }
     }
 
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
       margin: 0;
-      transition: background 0.3s, color 0.3s;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(0, 97, 224, 0.06), transparent 28%),
+        linear-gradient(90deg, var(--bg-alt), var(--bg));
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, sans-serif;
     }
 
-    .card {
-      background: var(--card-bg);
-      padding: 25px;
-      width: 420px;
+    .app-shell {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      padding: 24px 18px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent), var(--surface-muted);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .brand img {
+      width: 46px;
+      height: 46px;
       border-radius: 12px;
-      box-shadow: 0 4px 20px var(--shadow);
-      transition: background 0.3s, box-shadow 0.3s;
+      background: var(--surface-strong);
+      padding: 6px;
+      border: 1px solid var(--border);
     }
 
-    h2 {
-      margin-top: 0;
-      margin-bottom: 20px;
-      text-align: center;
+    .brand h1 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      padding: 12px 14px;
+      border-radius: 14px;
+      color: var(--text);
+      text-decoration: none;
+      border: 1px solid transparent;
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    }
+
+    .nav-link:hover {
+      background: var(--surface);
+      border-color: var(--border);
+      transform: translateX(2px);
+    }
+
+    .nav-link.active {
+      background: var(--accent-soft);
+      border-color: rgba(0, 97, 224, 0.24);
+      font-weight: 600;
+    }
+
+    .nav-label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .nav-label span:last-child {
+      font-size: 0.82rem;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .sidebar-note {
+      margin-top: auto;
+      padding: 14px;
+      border-radius: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      line-height: 1.5;
+      font-size: 0.9rem;
+    }
+
+    .main {
+      padding: 28px;
+    }
+
+    .panel {
+      max-width: 860px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+
+    .hero {
+      padding: 28px;
+      border-bottom: 1px solid var(--border);
+      background:
+        radial-gradient(circle at top right, rgba(0, 221, 255, 0.12), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent);
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-size: clamp(1.7rem, 3vw, 2.3rem);
+    }
+
+    .hero p {
+      margin: 10px 0 0;
+      color: var(--text-muted);
+      line-height: 1.65;
+      max-width: 620px;
+    }
+
+    .content {
+      padding: 28px;
     }
 
     label {
-      font-weight: bold;
-      margin-top: 15px;
       display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .field {
+      margin-bottom: 20px;
     }
 
     select,
     input {
       width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      background: var(--input-bg);
-      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 14px;
       border: 1px solid var(--border);
-      border-radius: 6px;
-      box-sizing: border-box;
+      background: var(--surface-strong);
+      color: var(--text);
+      font: inherit;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 2px solid rgba(0, 97, 224, 0.24);
+      outline-offset: 2px;
     }
 
     .hidden {
       display: none;
     }
 
+    .hint {
+      margin: 8px 0 0;
+      color: var(--text-muted);
+      line-height: 1.55;
+      font-size: 0.92rem;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface-strong);
+    }
+
+    .toggle-row input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      margin: 2px 0 0;
+      accent-color: var(--accent);
+      flex: 0 0 auto;
+    }
+
+    .toggle-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .toggle-copy strong {
+      font-size: 0.98rem;
+    }
+
     button {
-      margin-top: 25px;
-      width: 100%;
-      padding: 10px;
-      background: var(--button-bg);
-      color: white;
       border: none;
-      border-radius: 6px;
+      border-radius: 12px;
+      padding: 12px 16px;
       cursor: pointer;
-      font-size: 15px;
-      transition: background 0.2s;
+      font: inherit;
+      color: #ffffff;
+      background: var(--accent);
+      transition: background 0.18s ease, transform 0.18s ease;
     }
 
     button:hover {
-      background: var(--button-bg-hover);
+      background: var(--accent-hover);
+      transform: translateY(-1px);
     }
 
-    .title {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-    }
+    @media (max-width: 920px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
 
-    .ext-icon {
-      width: 48px;
-      height: 48px;
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+
+      .main {
+        padding: 18px;
+      }
+
+      .hero,
+      .content {
+        padding: 18px;
+      }
     }
   </style>
 </head>
 
 <body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <img src="icons/icon-128.png" alt="Quick Lookup icon">
+        <div>
+          <h1>Quick Lookup</h1>
+          <p>Dictionary shortcut and study notebook.</p>
+        </div>
+      </div>
 
-  <div class="card">
-    <div class="title">
-      <img src="icons/icon-128.png" alt="Extension Icon" class="ext-icon">
-      <h1>Quick Dictionary Lookup Settings</h1>
-    </div>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="notebook.html" class="nav-link">
+          <div class="nav-label">
+            <span>Notebook</span>
+            <span>Edit and preview markdown</span>
+          </div>
+        </a>
+        <a href="options.html" class="nav-link active" aria-current="page">
+          <div class="nav-label">
+            <span>Settings</span>
+            <span>Dictionary and shortcut</span>
+          </div>
+        </a>
+      </nav>
 
-    <label for="dictionarySelect">Choose Dictionary:</label>
-    <select id="dictionarySelect">
-      <option value="longman">Longman</option>
-      <option value="cambridge">Cambridge</option>
-      <option value="oxford">Oxford</option>
-      <option value="custom">Custom</option>
-    </select>
+      <div class="sidebar-note">
+        Use these settings to choose your dictionary and capture a shortcut that saves a word before opening lookup.
+      </div>
+    </aside>
 
+    <main class="main">
+      <section class="panel">
+        <header class="hero">
+          <h2>Settings</h2>
+          <p>Choose how Quick Lookup opens dictionary pages and configure the keyboard shortcut used to save words into your notebook.</p>
+        </header>
 
-    <div id="customFields" class="hidden">
-      <label>Custom URL Pattern:</label>
-      <input id="customUrl" type="text" placeholder="https://example.com/search/{keyword}">
+        <section class="content">
+          <div class="field">
+            <label for="dictionarySelect">Choose Dictionary</label>
+            <select id="dictionarySelect">
+              <option value="longman">Longman</option>
+              <option value="cambridge">Cambridge</option>
+              <option value="oxford">Oxford</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
 
-      <p style="font-size: 13px; opacity: 0.8; margin-top: 5px;">
-        Use <strong>{keyword}</strong> where the selected word should appear.<br>
-        Examples:<br>
-        • https://site.com/define/{keyword}<br>
-        • https://site.com/{keyword}/details<br>
-        • https://google.com/search?q={keyword}
-      </p>
-    </div>
+          <div id="customFields" class="hidden field">
+            <label for="customUrl">Custom URL Pattern</label>
+            <input id="customUrl" type="text" placeholder="https://example.com/search/{keyword}">
+            <p class="hint">
+              Use <strong>{keyword}</strong> where the selected word should appear. Example: <code>https://site.com/search?q={keyword}</code>
+            </p>
+          </div>
 
-    <label for="hotkeyInput">Activation Key:</label>
-    <input id="hotkeyInput" type="text" placeholder="Press a key…" readonly>
+          <div class="field">
+            <label for="hotkeyInput">Activation Key</label>
+            <input id="hotkeyInput" type="text" placeholder="Press a key..." readonly>
+            <p class="hint">Record a complete combination such as <code>Alt + L</code> or <code>Ctrl + Shift + D</code>.</p>
+          </div>
 
-    <button id="saveBtn">Save Settings</button>
+          <div class="field">
+            <label for="underlineToggle">Study Word Underline</label>
+            <div class="toggle-row">
+              <input id="underlineToggle" type="checkbox">
+              <div class="toggle-copy">
+                <strong>Underline studied words on web pages</strong>
+                <span class="hint">Only words saved as notebook headings like <code>## word</code> are underlined. Translation and notes are ignored.</span>
+              </div>
+            </div>
+          </div>
+
+          <button id="saveBtn">Save Settings</button>
+        </section>
+      </section>
+    </main>
   </div>
 
   <script src="options.js"></script>

@@ -1,111 +1,77 @@
-# 🔍 Quick Dictionary Lookup (Firefox Extension)
+# Quick Lookup Word Notebook
 
-A lightweight Firefox extension that lets you **select any word on a webpage** and instantly open a dictionary lookup in a popup window using a **customizable keyboard shortcut**.
+A lightweight Firefox extension that lets you select any word on a webpage, save it into a markdown notebook, and open a dictionary lookup with a customizable keyboard shortcut.
 
-You can choose between built‑in dictionaries (Longman, Cambridge, Oxford) or define your own custom URL pattern using `{keyword}` anywhere in the URL.
-
-This project was built with the help of AI (Microsoft Copilot) to speed up development, improve code structure, and refine UI/UX design.
+You can choose between built-in dictionaries (Longman, Cambridge, Oxford) or define your own custom URL pattern using `{keyword}` anywhere in the URL.
 
 ---
 
-## ✨ Features
+## Features
 
-- 🔤 **Select a word and press your shortcut** to open a dictionary popup  
-- ⌨️ **Customizable multi‑key shortcuts** (e.g., `Alt + Z`, `Shift + Enter`, `Ctrl + Alt + K`)  
-- 📚 **Built‑in dictionary presets**  
-  - Longman  
-  - Cambridge  
-  - Oxford  
-- 🌐 **Custom dictionary mode**  
-  - Use `{keyword}` anywhere in your URL  
-  - Example:  
-    ```
-    https://example.com/search?q={keyword}
-    ```
-- 🎨 **Modern settings UI**  
-  - Centered card layout  
-  - Auto light/dark theme based on system settings  
-- ⚡ Fast, simple, and privacy‑friendly
+- Select a word and press your shortcut to save it into your notebook and open a dictionary popup
+- Open a dedicated markdown notebook editor from the extension icon
+- Export the notebook to a single `.md` file and import it later
+- Customize multi-key shortcuts such as `Alt + Z`, `Shift + Enter`, or `Ctrl + Alt + K`
+- Use built-in dictionary presets or a custom dictionary URL
 
 ---
 
-## 🛠 Installation (Temporary Add‑on)
+## Installation
 
-1. Open Firefox  
-2. Go to: `about:debugging#/runtime/this-firefox`  
-3. Click **Load Temporary Add-on**  
-4. Select your `manifest.json` file  
-
-The extension will load immediately.
+1. Open Firefox.
+2. Go to `about:debugging#/runtime/this-firefox`.
+3. Click **Load Temporary Add-on**.
+4. Select `manifest.json`.
 
 ---
 
-## ⚙️ Usage
+## Usage
 
-### 1. Select a word  
-Highlight any text on a webpage.
+### Save and lookup
 
-### 2. Press your shortcut  
-Default: **Alt**
+1. Highlight a word on any webpage.
+2. Press your shortcut.
+3. The extension appends the word to the notebook and opens the configured dictionary popup.
 
-You can change this in the extension settings.
+### Edit the notebook
 
-### 3. Dictionary popup opens  
-The selected word is inserted into the dictionary URL.
+1. Click the extension icon.
+2. Edit the markdown notebook in the editor tab.
+3. Click **Save Notebook** to keep your changes inside the extension.
 
----
+### Export or import markdown
 
-## ⚙️ Custom Dictionary URL
-
-In the settings page, choose **Custom** and enter a URL like:
-https://example.com/search?q={keyword}
-
-
-The extension will replace `{keyword}` with the selected word.
+- Click **Export Markdown** to save a `.md` copy anywhere you want on disk.
+- Click **Import Markdown** to replace the current notebook with a markdown file you edited yourself.
 
 ---
 
-## ⌨️ Custom Shortcut
+## Notebook Format
 
-You can set any combination:
+Each saved word is appended using a simple, human-editable markdown block:
 
-- Alt + Z  
-- Shift + Enter  
-- Ctrl + Shift + L  
-- Meta + S (Mac)  
-- F2, F3, etc.
+```md
+## word
 
-Just click the shortcut field and press your desired keys.
-
----
-
-## 🎨 Theme Support
-
-The settings page automatically adapts to:
-
-- Light mode  
-- Dark mode  
-
-based on your system or Firefox theme.
+- Translation:
+- Notes:
+```
 
 ---
 
-## 🤖 AI Assistance
+## Settings
 
-This project was developed with the help of **Microsoft Copilot**, which assisted in:
+Open the settings page to:
 
-- Designing the extension architecture  
-- Writing and refactoring JavaScript  
-- Improving the UI/UX  
-- Implementing multi‑key shortcuts  
-- Creating this README 
-
-All code was reviewed and customized manually afterward.
+- choose the dictionary provider
+- enter a custom URL pattern with `{keyword}`
+- record a new activation shortcut
 
 ---
 
-## 📄 License
+## License
 
-MIT License — feel free to modify and use this extension in your own projects.
+MIT License
 
----
+
+try to add AI to project

@@ -4,14 +4,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         customFields: document.getElementById("customFields"),
         customUrlInput: document.getElementById("customUrl"),
         hotkeyInput: document.getElementById("hotkeyInput"),
+        underlineToggle: document.getElementById("underlineToggle"),
         saveBtn: document.getElementById("saveBtn")
     };
 
     // 1. Load Settings with a clear fallback
-    const saved = await browser.storage.sync.get(["dictionary", "customUrl", "hotkey"]);
+    const saved = await browser.storage.sync.get(["dictionary", "customUrl", "hotkey", "underlineStudiedWords"]);
 
     elements.dictionarySelect.value = saved.dictionary || "longman";
     elements.customUrlInput.value = saved.customUrl || "";
+    elements.underlineToggle.checked = Boolean(saved.underlineStudiedWords);
 
     let currentShortcut = saved.hotkey || {
         ctrl: false, alt: true, shift: false, meta: false,
@@ -71,7 +73,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         await browser.storage.sync.set({
             dictionary: elements.dictionarySelect.value,
             customUrl: elements.customUrlInput.value,
-            hotkey: currentShortcut
+            hotkey: currentShortcut,
+            underlineStudiedWords: elements.underlineToggle.checked
         });
 
         // Professional touch: Change button text instead of a jumpy alert

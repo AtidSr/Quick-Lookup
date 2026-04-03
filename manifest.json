@@ -1,10 +1,11 @@
 {
   "manifest_version": 3,
   "name": "Quick Lookup",
-  "version": "2.0",
+  "version": "3.0",
 "description": "Instantly open a dictionary lookup for selected text using a keyboard shortcut.",
   "permissions": [
-    "storage"
+    "storage",
+    "downloads"
   ],
   "background": {
     "scripts": [
