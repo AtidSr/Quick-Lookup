@@ -23,46 +23,73 @@ let statusTimer;
 let currentMode = "preview";
 let currentLayout = "single";
 
-function escapeHtml(value) {
-    return value
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
+function appendInlineNodes(parent, text) {
+    const pattern = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\*[^*]+\*)/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = pattern.exec(text)) !== null) {
+        const [token] = match;
+
+        if (match.index > lastIndex) {
+            parent.appendChild(document.createTextNode(text.slice(lastIndex, match.index)));
+        }
+
+        let element;
+        if (token.startsWith("`")) {
+            element = document.createElement("code");
+            element.textContent = token.slice(1, -1);
+        } else if (token.startsWith("**")) {
+            element = document.createElement("strong");
+            element.textContent = token.slice(2, -2);
+        } else {
+            element = document.createElement("em");
+            element.textContent = token.slice(1, -1);
+        }
+
+        parent.appendChild(element);
+        lastIndex = match.index + token.length;
+    }
+
+    if (lastIndex < text.length) {
+        parent.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
 }
 
-function applyInlineMarkdown(text) {
-    let result = escapeHtml(text);
-    result = result.replace(/`([^`]+)`/g, "<code>$1</code>");
-    result = result.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    result = result.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-    return result;
+function appendBlockWithInlineText(fragment, tagName, text) {
+    const element = document.createElement(tagName);
+    appendInlineNodes(element, text);
+    fragment.appendChild(element);
 }
 
-function renderMarkdown(markdown) {
+function renderMarkdownFragment(markdown) {
     const lines = markdown.replace(/\r\n/g, "\n").split("\n");
-    const html = [];
+    const fragment = document.createDocumentFragment();
     let inList = false;
     let inCodeBlock = false;
     let codeBuffer = [];
     let paragraph = [];
+    let currentList = null;
 
     function flushParagraph() {
         if (paragraph.length === 0) return;
-        html.push(`<p>${applyInlineMarkdown(paragraph.join(" "))}</p>`);
+        appendBlockWithInlineText(fragment, "p", paragraph.join(" "));
         paragraph = [];
     }
 
     function closeList() {
         if (!inList) return;
-        html.push("</ul>");
+        currentList = null;
         inList = false;
     }
 
     function closeCodeBlock() {
         if (!inCodeBlock) return;
-        html.push(`<pre><code>${escapeHtml(codeBuffer.join("\n"))}</code></pre>`);
+        const pre = document.createElement("pre");
+        const code = document.createElement("code");
+        code.textContent = codeBuffer.join("\n");
+        pre.appendChild(code);
+        fragment.appendChild(pre);
         inCodeBlock = false;
         codeBuffer = [];
     }
@@ -96,38 +123,41 @@ function renderMarkdown(markdown) {
         if (trimmed.startsWith(">")) {
             flushParagraph();
             closeList();
-            html.push(`<blockquote>${applyInlineMarkdown(trimmed.slice(1).trim())}</blockquote>`);
+            appendBlockWithInlineText(fragment, "blockquote", trimmed.slice(1).trim());
             continue;
         }
 
         if (trimmed.startsWith("### ")) {
             flushParagraph();
             closeList();
-            html.push(`<h3>${applyInlineMarkdown(trimmed.slice(4))}</h3>`);
+            appendBlockWithInlineText(fragment, "h3", trimmed.slice(4));
             continue;
         }
 
         if (trimmed.startsWith("## ")) {
             flushParagraph();
             closeList();
-            html.push(`<h2>${applyInlineMarkdown(trimmed.slice(3))}</h2>`);
+            appendBlockWithInlineText(fragment, "h2", trimmed.slice(3));
             continue;
         }
 
         if (trimmed.startsWith("# ")) {
             flushParagraph();
             closeList();
-            html.push(`<h1>${applyInlineMarkdown(trimmed.slice(2))}</h1>`);
+            appendBlockWithInlineText(fragment, "h1", trimmed.slice(2));
             continue;
         }
 
         if (trimmed.startsWith("- ")) {
             flushParagraph();
             if (!inList) {
-                html.push("<ul>");
+                currentList = document.createElement("ul");
+                fragment.appendChild(currentList);
                 inList = true;
             }
-            html.push(`<li>${applyInlineMarkdown(trimmed.slice(2))}</li>`);
+            const listItem = document.createElement("li");
+            appendInlineNodes(listItem, trimmed.slice(2));
+            currentList.appendChild(listItem);
             continue;
         }
 
@@ -139,7 +169,7 @@ function renderMarkdown(markdown) {
     closeList();
     closeCodeBlock();
 
-    return html.join("");
+    return fragment;
 }
 
 function setStatus(message, isError = false) {
@@ -160,7 +190,7 @@ function setStatus(message, isError = false) {
 
 function updatePreview() {
     const markdown = elements.editor.value || DEFAULT_NOTEBOOK;
-    elements.previewPane.innerHTML = renderMarkdown(markdown);
+    elements.previewPane.replaceChildren(renderMarkdownFragment(markdown));
 }
 
 function syncWorkbench() {
