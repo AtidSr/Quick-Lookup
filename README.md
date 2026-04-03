@@ -72,6 +72,3 @@ Open the settings page to:
 ## License
 
 MIT License
-
-
-try to add AI to project
