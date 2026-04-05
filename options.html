@@ -360,6 +360,23 @@
           </div>
 
           <div class="field">
+            <label for="lookupShortcutEnabled">Popup Shortcut Status</label>
+            <div class="toggle-row">
+              <input id="lookupShortcutEnabled" type="checkbox">
+              <div class="toggle-copy">
+                <strong>Enable popup lookup shortcut</strong>
+                <span class="hint">Turn the main save-and-open-popup shortcut on or off without changing your saved shortcut.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="toggleLookupHotkeyInput">Toggle Popup Shortcut Key</label>
+            <input id="toggleLookupHotkeyInput" type="text" placeholder="Press a key..." readonly>
+            <p class="hint">Use this shortcut to activate or deactivate the popup lookup shortcut instantly, for example <code>Ctrl + Alt + L</code>.</p>
+          </div>
+
+          <div class="field">
             <label for="notebookHotkeyInput">Notebook Shortcut</label>
             <input id="notebookHotkeyInput" type="text" placeholder="Press a key..." readonly>
             <p class="hint">Use a separate shortcut such as <code>Alt + N</code> to open the notebook quickly from any page.</p>

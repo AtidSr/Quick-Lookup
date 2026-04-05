@@ -1,8 +1,11 @@
 const NOTEBOOK_KEY = "wordNotebook";
 const UNDERLINE_SETTING_KEY = "underlineStudiedWords";
 const NOTEBOOK_SHORTCUT_KEY = "notebookHotkey";
+const TOGGLE_LOOKUP_SHORTCUT_KEY = "toggleLookupHotkey";
+const LOOKUP_SHORTCUT_ENABLED_KEY = "lookupShortcutEnabled";
 const UNDERLINE_CLASS = "quick-lookup-studied-word";
 const STYLE_ID = "quick-lookup-studied-style";
+const TOAST_ID = "quick-lookup-toast";
 const EXCLUDED_TAGS = new Set([
     "SCRIPT",
     "STYLE",
@@ -25,6 +28,14 @@ const state = {
         meta: false,
         key: "Alt"
     },
+    lookupShortcutEnabled: true,
+    toggleLookupHotkey: {
+        ctrl: true,
+        alt: true,
+        shift: false,
+        meta: false,
+        key: "l"
+    },
     notebookHotkey: {
         ctrl: false,
         alt: true,
@@ -38,7 +49,8 @@ const state = {
     refreshTimer: null,
     isApplyingUnderlines: false,
     isPointerSelecting: false,
-    pendingRefresh: false
+    pendingRefresh: false,
+    toastTimer: null
 };
 
 function isEnglishStudyHeading(line) {
@@ -78,6 +90,51 @@ function ensureUnderlineStyle() {
     `;
 
     document.documentElement.appendChild(style);
+}
+
+function ensureToast() {
+    let toast = document.getElementById(TOAST_ID);
+    if (toast) return toast;
+
+    toast = document.createElement("div");
+    toast.id = TOAST_ID;
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+    toast.style.cssText = [
+        "position: fixed",
+        "right: 18px",
+        "bottom: 18px",
+        "z-index: 2147483647",
+        "padding: 10px 14px",
+        "border-radius: 12px",
+        "background: rgba(20, 24, 34, 0.92)",
+        "color: #fff",
+        "font: 13px/1.4 'Segoe UI', system-ui, sans-serif",
+        "box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24)",
+        "opacity: 0",
+        "transform: translateY(8px)",
+        "pointer-events: none",
+        "transition: opacity 0.18s ease, transform 0.18s ease"
+    ].join(";");
+
+    document.documentElement.appendChild(toast);
+    return toast;
+}
+
+function showToast(message) {
+    const toast = ensureToast();
+    toast.textContent = message;
+    toast.style.opacity = "1";
+    toast.style.transform = "translateY(0)";
+
+    if (state.toastTimer) {
+        clearTimeout(state.toastTimer);
+    }
+
+    state.toastTimer = setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(8px)";
+    }, 1600);
 }
 
 function clearUnderlines() {
@@ -290,12 +347,26 @@ function ensureObserver() {
 
 async function loadUnderlineState() {
     const [syncSettings, localSettings] = await Promise.all([
-        browser.storage.sync.get([UNDERLINE_SETTING_KEY, "hotkey", NOTEBOOK_SHORTCUT_KEY]),
+        browser.storage.sync.get([
+            UNDERLINE_SETTING_KEY,
+            "hotkey",
+            NOTEBOOK_SHORTCUT_KEY,
+            TOGGLE_LOOKUP_SHORTCUT_KEY,
+            LOOKUP_SHORTCUT_ENABLED_KEY
+        ]),
         browser.storage.local.get(NOTEBOOK_KEY)
     ]);
 
     if (syncSettings.hotkey) {
         state.hotkey = syncSettings.hotkey;
+    }
+
+    if (syncSettings[TOGGLE_LOOKUP_SHORTCUT_KEY]) {
+        state.toggleLookupHotkey = syncSettings[TOGGLE_LOOKUP_SHORTCUT_KEY];
+    }
+
+    if (LOOKUP_SHORTCUT_ENABLED_KEY in syncSettings) {
+        state.lookupShortcutEnabled = Boolean(syncSettings[LOOKUP_SHORTCUT_ENABLED_KEY]);
     }
 
     if (syncSettings[NOTEBOOK_SHORTCUT_KEY]) {
@@ -310,6 +381,14 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === "sync") {
         if (changes.hotkey?.newValue) {
             state.hotkey = changes.hotkey.newValue;
+        }
+
+        if (changes[TOGGLE_LOOKUP_SHORTCUT_KEY]?.newValue) {
+            state.toggleLookupHotkey = changes[TOGGLE_LOOKUP_SHORTCUT_KEY].newValue;
+        }
+
+        if (LOOKUP_SHORTCUT_ENABLED_KEY in changes) {
+            state.lookupShortcutEnabled = Boolean(changes[LOOKUP_SHORTCUT_ENABLED_KEY].newValue);
         }
 
         if (changes[NOTEBOOK_SHORTCUT_KEY]?.newValue) {
@@ -347,6 +426,20 @@ document.addEventListener("mouseup", () => {
 document.addEventListener("keydown", (e) => {
     if (isEditableTarget(e.target)) return;
 
+    if (matchesShortcut(e, state.toggleLookupHotkey)) {
+        e.preventDefault();
+        browser.runtime.sendMessage({
+            type: "toggle-lookup-shortcut-enabled"
+        }).then((response) => {
+            const isEnabled = Boolean(response?.enabled);
+            state.lookupShortcutEnabled = isEnabled;
+            showToast(isEnabled ? "Popup shortcut enabled" : "Popup shortcut disabled");
+        }).catch((error) => {
+            console.error("Quick Lookup failed to toggle shortcut state.", error);
+        });
+        return;
+    }
+
     if (matchesShortcut(e, state.notebookHotkey)) {
         e.preventDefault();
         browser.runtime.sendMessage({
@@ -357,6 +450,7 @@ document.addEventListener("keydown", (e) => {
 
     const { hotkey, selectedText } = state;
 
+    if (!state.lookupShortcutEnabled) return;
     if (!selectedText) return;
 
     if (matchesShortcut(e, hotkey)) {

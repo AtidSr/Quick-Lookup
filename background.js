@@ -1,9 +1,11 @@
 const NOTEBOOK_KEY = "wordNotebook";
 const NOTEBOOK_OPEN_MODE_KEY = "notebookOpenMode";
+const LOOKUP_SHORTCUT_ENABLED_KEY = "lookupShortcutEnabled";
 const DEFAULT_NOTEBOOK = `# Word Notebook
 
 `;
 const DEFAULT_NOTEBOOK_OPEN_MODE = "popup";
+const DEFAULT_LOOKUP_SHORTCUT_ENABLED = true;
 
 function createWordEntry(word) {
     return `## ${word}
@@ -99,7 +101,7 @@ async function openNotebookPage(openMode) {
 browser.runtime.onInstalled.addListener(async () => {
     const [notebook, syncSettings] = await Promise.all([
         browser.storage.local.get(NOTEBOOK_KEY),
-        browser.storage.sync.get(NOTEBOOK_OPEN_MODE_KEY)
+        browser.storage.sync.get([NOTEBOOK_OPEN_MODE_KEY, LOOKUP_SHORTCUT_ENABLED_KEY])
     ]);
 
     if (!notebook[NOTEBOOK_KEY]) {
@@ -111,6 +113,12 @@ browser.runtime.onInstalled.addListener(async () => {
     if (!syncSettings[NOTEBOOK_OPEN_MODE_KEY]) {
         await browser.storage.sync.set({
             [NOTEBOOK_OPEN_MODE_KEY]: DEFAULT_NOTEBOOK_OPEN_MODE
+        });
+    }
+
+    if (!(LOOKUP_SHORTCUT_ENABLED_KEY in syncSettings)) {
+        await browser.storage.sync.set({
+            [LOOKUP_SHORTCUT_ENABLED_KEY]: DEFAULT_LOOKUP_SHORTCUT_ENABLED
         });
     }
 });
@@ -130,6 +138,25 @@ browser.runtime.onMessage.addListener(async (message) => {
         case "open-notebook":
             await openNotebookPage(message.openMode);
             return;
+
+        case "set-lookup-shortcut-enabled":
+            await browser.storage.sync.set({
+                [LOOKUP_SHORTCUT_ENABLED_KEY]: Boolean(message.enabled)
+            });
+            return {
+                enabled: Boolean(message.enabled)
+            };
+
+        case "toggle-lookup-shortcut-enabled": {
+            const storedSettings = await browser.storage.sync.get(LOOKUP_SHORTCUT_ENABLED_KEY);
+            const nextEnabled = !(storedSettings[LOOKUP_SHORTCUT_ENABLED_KEY] ?? DEFAULT_LOOKUP_SHORTCUT_ENABLED);
+            await browser.storage.sync.set({
+                [LOOKUP_SHORTCUT_ENABLED_KEY]: nextEnabled
+            });
+            return {
+                enabled: nextEnabled
+            };
+        }
 
         default:
             return;
