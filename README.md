@@ -10,11 +10,13 @@ You can choose between built-in dictionaries (Longman, Cambridge, Oxford) or def
 
 - Select a word and press your shortcut to save it into your notebook and open a dictionary popup
 - Open a dedicated markdown notebook editor from the extension icon
+- Open a separate analytics page for learning progress, new words per week, and most or least looked-up words
 - Open the notebook with its own editable shortcut, either in a popup window or a new tab
 - Export the notebook to a single `.md` file and import it later
 - Customize multi-key shortcuts such as `Alt + Z`, `Shift + Enter`, or `Ctrl + Alt + K`
 - Turn the popup lookup shortcut on or off with a separate customizable toggle shortcut
 - Automatically capitalize saved words and skip duplicates in the notebook
+- Track how many times each saved word was looked up
 - Use built-in dictionary presets or a custom dictionary URL
 
 ---
@@ -40,7 +42,8 @@ You can choose between built-in dictionaries (Longman, Cambridge, Oxford) or def
 
 1. Click the extension icon.
 2. Edit the markdown notebook in the editor tab.
-3. Click **Save Notebook** to keep your changes inside the extension.
+3. Open the Analytics page from the left navigation whenever you want your lookup statistics and learning progress.
+4. Click **Save Notebook** to keep your changes inside the extension.
 
 ### Export or import markdown
 

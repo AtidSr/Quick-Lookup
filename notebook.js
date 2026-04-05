@@ -242,8 +242,9 @@ async function loadNotebook() {
 }
 
 async function saveNotebook(notebookContent) {
-    await browser.storage.local.set({
-        [NOTEBOOK_KEY]: notebookContent
+    await browser.runtime.sendMessage({
+        type: "save-notebook",
+        notebookContent
     });
 }
 
@@ -331,4 +332,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     syncWorkbench();
+});
+
+browser.storage.onChanged.addListener(async (changes, areaName) => {
+    if (areaName !== "local") return;
+
+    if (NOTEBOOK_KEY in changes) {
+        const nextNotebook = changes[NOTEBOOK_KEY].newValue || DEFAULT_NOTEBOOK;
+        if (elements.editor.value !== nextNotebook) {
+            elements.editor.value = nextNotebook;
+            if (currentMode === "preview" || currentLayout === "split") {
+                updatePreview();
+            }
+        }
+    }
 });

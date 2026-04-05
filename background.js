@@ -1,4 +1,5 @@
 const NOTEBOOK_KEY = "wordNotebook";
+const WORD_ANALYTICS_KEY = "wordAnalytics";
 const NOTEBOOK_OPEN_MODE_KEY = "notebookOpenMode";
 const LOOKUP_SHORTCUT_ENABLED_KEY = "lookupShortcutEnabled";
 const DEFAULT_NOTEBOOK = `# Word Notebook
@@ -35,6 +36,101 @@ function notebookHasWord(notebook, word) {
     return headingPattern.test(notebook);
 }
 
+function isEnglishStudyHeading(line) {
+    const match = line.match(/^##\s+([A-Za-z]+(?:[ '-][A-Za-z]+)*)\s*$/);
+    return match ? match[1].trim() : "";
+}
+
+function parseStudiedWords(markdown) {
+    return markdown
+        .split(/\r?\n/)
+        .map(isEnglishStudyHeading)
+        .filter(Boolean);
+}
+
+function normalizeAnalyticsWord(word) {
+    return capitalizeWord(normalizeWord(word));
+}
+
+function startOfDayIso(timestamp) {
+    const date = new Date(timestamp);
+    date.setHours(0, 0, 0, 0);
+    return date.toISOString();
+}
+
+function sanitizeAnalyticsRecord(word, record = {}) {
+    const normalizedWord = normalizeAnalyticsWord(word);
+    const lookupCount = Number.isFinite(record.lookupCount) && record.lookupCount > 0
+        ? Math.floor(record.lookupCount)
+        : 0;
+    const createdAt = typeof record.createdAt === "string" && !Number.isNaN(Date.parse(record.createdAt))
+        ? record.createdAt
+        : record.firstLookupAt || new Date().toISOString();
+    const firstLookupAt = typeof record.firstLookupAt === "string" && !Number.isNaN(Date.parse(record.firstLookupAt))
+        ? record.firstLookupAt
+        : createdAt;
+    const lastLookupAt = typeof record.lastLookupAt === "string" && !Number.isNaN(Date.parse(record.lastLookupAt))
+        ? record.lastLookupAt
+        : firstLookupAt;
+
+    return {
+        word: normalizedWord,
+        lookupCount,
+        createdAt,
+        createdDay: typeof record.createdDay === "string" && !Number.isNaN(Date.parse(record.createdDay))
+            ? record.createdDay
+            : startOfDayIso(createdAt),
+        firstLookupAt,
+        lastLookupAt
+    };
+}
+
+async function getWordAnalytics() {
+    const stored = await browser.storage.local.get(WORD_ANALYTICS_KEY);
+    return stored[WORD_ANALYTICS_KEY] || {};
+}
+
+async function setWordAnalytics(analytics) {
+    await browser.storage.local.set({
+        [WORD_ANALYTICS_KEY]: analytics
+    });
+}
+
+async function syncAnalyticsWithNotebook(notebookContent, existingAnalytics) {
+    const analytics = existingAnalytics || await getWordAnalytics();
+    const notebookWords = [...new Set(parseStudiedWords(notebookContent).map(normalizeAnalyticsWord))];
+    const nextAnalytics = {};
+
+    for (const word of notebookWords) {
+        nextAnalytics[word] = sanitizeAnalyticsRecord(word, analytics[word]);
+    }
+
+    await setWordAnalytics(nextAnalytics);
+    return nextAnalytics;
+}
+
+async function recordWordLookup(word, wasNewWord) {
+    const analytics = await getWordAnalytics();
+    const normalizedWord = normalizeAnalyticsWord(word);
+    const now = new Date().toISOString();
+    const existingRecord = sanitizeAnalyticsRecord(normalizedWord, analytics[normalizedWord]);
+    const createdAt = wasNewWord ? now : existingRecord.createdAt;
+    const nextRecord = {
+        ...existingRecord,
+        word: normalizedWord,
+        lookupCount: existingRecord.lookupCount + 1,
+        createdAt,
+        createdDay: startOfDayIso(createdAt),
+        firstLookupAt: existingRecord.lookupCount > 0 ? existingRecord.firstLookupAt : now,
+        lastLookupAt: now
+    };
+
+    await setWordAnalytics({
+        ...analytics,
+        [normalizedWord]: nextRecord
+    });
+}
+
 async function getNotebookContent() {
     const stored = await browser.storage.local.get(NOTEBOOK_KEY);
     return stored[NOTEBOOK_KEY] || DEFAULT_NOTEBOOK;
@@ -42,13 +138,21 @@ async function getNotebookContent() {
 
 async function appendWordToNotebook(word) {
     const normalizedWord = normalizeWord(word);
-    if (!normalizedWord) return normalizedWord;
+    if (!normalizedWord) {
+        return {
+            word: normalizedWord,
+            wasNewWord: false
+        };
+    }
 
     const capitalizedWord = capitalizeWord(normalizedWord);
 
     const currentNotebook = await getNotebookContent();
     if (notebookHasWord(currentNotebook, capitalizedWord)) {
-        return capitalizedWord;
+        return {
+            word: capitalizedWord,
+            wasNewWord: false
+        };
     }
 
     const separator = currentNotebook.endsWith("\n\n") || currentNotebook.length === 0 ? "" : "\n";
@@ -58,7 +162,12 @@ async function appendWordToNotebook(word) {
         [NOTEBOOK_KEY]: nextNotebook
     });
 
-    return capitalizedWord;
+    await syncAnalyticsWithNotebook(nextNotebook);
+
+    return {
+        word: capitalizedWord,
+        wasNewWord: true
+    };
 }
 
 async function buildLookupUrl(word) {
@@ -148,6 +257,8 @@ browser.runtime.onInstalled.addListener(async () => {
             [LOOKUP_SHORTCUT_ENABLED_KEY]: DEFAULT_LOOKUP_SHORTCUT_ENABLED
         });
     }
+
+    await syncAnalyticsWithNotebook(notebook[NOTEBOOK_KEY] || DEFAULT_NOTEBOOK);
 });
 
 browser.action.onClicked.addListener(async () => {
@@ -158,9 +269,25 @@ browser.runtime.onMessage.addListener(async (message) => {
     switch (message.type) {
         case "save-and-lookup":
             if (!message.word) return;
-            await appendWordToNotebook(message.word);
+            {
+                const result = await appendWordToNotebook(message.word);
+                await recordWordLookup(result.word, result.wasNewWord);
+            }
             await openLookupPopup(normalizeWord(message.word));
             return;
+
+        case "save-notebook":
+            if (typeof message.notebookContent !== "string") return;
+            await browser.storage.local.set({
+                [NOTEBOOK_KEY]: message.notebookContent
+            });
+            await syncAnalyticsWithNotebook(message.notebookContent);
+            return;
+
+        case "get-word-analytics":
+            return {
+                analytics: await getWordAnalytics()
+            };
 
         case "open-notebook":
             await openNotebookPage(message.openMode);
