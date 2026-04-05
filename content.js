@@ -152,7 +152,7 @@ function ensureSelectionPopup() {
     ].join(";");
 
     const icon = document.createElement("img");
-    icon.src = browser.runtime.getURL("icons/icon-128.png");
+    icon.src = browser.runtime.getURL("icons/icon-32.png");
     icon.alt = "";
     icon.style.cssText = [
         "width: 20px",

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Quick Lookup",
   "version": "3.1",
-"description": "Instantly open a dictionary lookup for selected text using a keyboard shortcut.",
+  "description": "Instantly open a dictionary lookup for selected text using a keyboard shortcut.",
   "permissions": [
     "storage",
     "downloads"
@@ -30,7 +30,7 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "icons/icon-128.png"
+        "icons/icon-32.png"
       ],
       "matches": [
         "<all_urls>"
@@ -41,11 +41,15 @@
     "gecko": {
       "id": "quick-lookup@example.com",
       "data_collection_permissions": {
-        "required": ["none"]
+        "required": [
+          "none"
+        ]
       }
     }
   },
   "icons": {
+    "32": "icons/icon-32.png",
+    "64": "icons/icon-64.png",
     "128": "icons/icon-128.png"
   },
   "action": {
