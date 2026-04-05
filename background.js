@@ -2,11 +2,13 @@ const NOTEBOOK_KEY = "wordNotebook";
 const WORD_ANALYTICS_KEY = "wordAnalytics";
 const NOTEBOOK_OPEN_MODE_KEY = "notebookOpenMode";
 const LOOKUP_SHORTCUT_ENABLED_KEY = "lookupShortcutEnabled";
+const SELECTION_POPUP_ENABLED_KEY = "selectionPopupEnabled";
 const DEFAULT_NOTEBOOK = `# Word Notebook
 
 `;
 const DEFAULT_NOTEBOOK_OPEN_MODE = "popup";
 const DEFAULT_LOOKUP_SHORTCUT_ENABLED = true;
+const DEFAULT_SELECTION_POPUP_ENABLED = true;
 
 function createWordEntry(word) {
     return `## ${word}
@@ -237,7 +239,11 @@ async function openNotebookPage(openMode) {
 browser.runtime.onInstalled.addListener(async () => {
     const [notebook, syncSettings] = await Promise.all([
         browser.storage.local.get(NOTEBOOK_KEY),
-        browser.storage.sync.get([NOTEBOOK_OPEN_MODE_KEY, LOOKUP_SHORTCUT_ENABLED_KEY])
+        browser.storage.sync.get([
+            NOTEBOOK_OPEN_MODE_KEY,
+            LOOKUP_SHORTCUT_ENABLED_KEY,
+            SELECTION_POPUP_ENABLED_KEY
+        ])
     ]);
 
     if (!notebook[NOTEBOOK_KEY]) {
@@ -258,6 +264,12 @@ browser.runtime.onInstalled.addListener(async () => {
         });
     }
 
+    if (!(SELECTION_POPUP_ENABLED_KEY in syncSettings)) {
+        await browser.storage.sync.set({
+            [SELECTION_POPUP_ENABLED_KEY]: DEFAULT_SELECTION_POPUP_ENABLED
+        });
+    }
+
     await syncAnalyticsWithNotebook(notebook[NOTEBOOK_KEY] || DEFAULT_NOTEBOOK);
 });
 
@@ -273,6 +285,11 @@ browser.runtime.onMessage.addListener(async (message) => {
                 const result = await appendWordToNotebook(message.word);
                 await recordWordLookup(result.word, result.wasNewWord);
             }
+            await openLookupPopup(normalizeWord(message.word));
+            return;
+
+        case "open-lookup":
+            if (!message.word) return;
             await openLookupPopup(normalizeWord(message.word));
             return;
 

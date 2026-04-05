@@ -1,11 +1,13 @@
 const NOTEBOOK_KEY = "wordNotebook";
 const UNDERLINE_SETTING_KEY = "underlineStudiedWords";
+const SELECTION_POPUP_ENABLED_KEY = "selectionPopupEnabled";
 const NOTEBOOK_SHORTCUT_KEY = "notebookHotkey";
 const TOGGLE_LOOKUP_SHORTCUT_KEY = "toggleLookupHotkey";
 const LOOKUP_SHORTCUT_ENABLED_KEY = "lookupShortcutEnabled";
 const UNDERLINE_CLASS = "quick-lookup-studied-word";
 const STYLE_ID = "quick-lookup-studied-style";
 const TOAST_ID = "quick-lookup-toast";
+const SELECTION_POPUP_ID = "quick-lookup-selection-popup";
 const EXCLUDED_TAGS = new Set([
     "SCRIPT",
     "STYLE",
@@ -44,13 +46,15 @@ const state = {
         key: "n"
     },
     underlineStudiedWords: false,
+    selectionPopupEnabled: true,
     studiedWords: [],
     observer: null,
     refreshTimer: null,
     isApplyingUnderlines: false,
     isPointerSelecting: false,
     pendingRefresh: false,
-    toastTimer: null
+    toastTimer: null,
+    isPopupPointerDown: false
 };
 
 function isEnglishStudyHeading(line) {
@@ -119,6 +123,135 @@ function ensureToast() {
 
     document.documentElement.appendChild(toast);
     return toast;
+}
+
+function ensureSelectionPopup() {
+    let popup = document.getElementById(SELECTION_POPUP_ID);
+    if (popup) return popup;
+
+    popup = document.createElement("button");
+    popup.id = SELECTION_POPUP_ID;
+    popup.type = "button";
+    popup.setAttribute("aria-label", "Open selected word in dictionary");
+    popup.style.cssText = [
+        "position: fixed",
+        "left: 0",
+        "top: 0",
+        "width: 36px",
+        "height: 36px",
+        "display: none",
+        "align-items: center",
+        "justify-content: center",
+        "padding: 0",
+        "border: 1px solid rgba(24, 34, 58, 0.14)",
+        "border-radius: 10px",
+        "background: rgba(255, 255, 255, 0.98)",
+        "box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18)",
+        "z-index: 2147483647",
+        "cursor: pointer"
+    ].join(";");
+
+    const icon = document.createElement("img");
+    icon.src = browser.runtime.getURL("icons/icon-128.png");
+    icon.alt = "";
+    icon.style.cssText = [
+        "width: 20px",
+        "height: 20px",
+        "display: block",
+        "pointer-events: none"
+    ].join(";");
+
+    popup.appendChild(icon);
+
+    popup.addEventListener("mousedown", () => {
+        state.isPopupPointerDown = true;
+    });
+
+    popup.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const word = state.selectedText.trim();
+        if (!word) return;
+
+        browser.runtime.sendMessage({
+            type: "open-lookup",
+            word
+        }).catch((error) => {
+            console.error("Quick Lookup failed to open the selected word.", error);
+        });
+
+        hideSelectionPopup();
+    });
+
+    document.documentElement.appendChild(popup);
+    return popup;
+}
+
+function hideSelectionPopup() {
+    const popup = document.getElementById(SELECTION_POPUP_ID);
+    if (!popup) return;
+
+    popup.style.display = "none";
+}
+
+function getSelectionRect(selection) {
+    if (!selection || selection.rangeCount === 0) return null;
+
+    const range = selection.getRangeAt(0);
+    const rects = Array.from(range.getClientRects()).filter((rect) => rect.width || rect.height);
+    if (rects.length > 0) {
+        return rects[rects.length - 1];
+    }
+
+    const fallbackRect = range.getBoundingClientRect();
+    if (fallbackRect.width || fallbackRect.height) {
+        return fallbackRect;
+    }
+
+    return null;
+}
+
+function showSelectionPopup() {
+    if (!state.selectionPopupEnabled) {
+        hideSelectionPopup();
+        return;
+    }
+
+    const selection = window.getSelection();
+    const word = selection?.toString().trim() || "";
+    state.selectedText = word;
+
+    if (!word) {
+        hideSelectionPopup();
+        return;
+    }
+
+    const rect = getSelectionRect(selection);
+    if (!rect) {
+        hideSelectionPopup();
+        return;
+    }
+
+    const popup = ensureSelectionPopup();
+    const popupSize = 36;
+    const offset = 10;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    let left = rect.left + (rect.width / 2) - (popupSize / 2);
+    let top = rect.bottom + offset;
+
+    if (top + popupSize > viewportHeight - 8) {
+        top = rect.top - popupSize - offset;
+    }
+
+    left = Math.min(Math.max(8, left), viewportWidth - popupSize - 8);
+    top = Math.min(Math.max(8, top), viewportHeight - popupSize - 8);
+
+    popup.style.left = `${left}px`;
+    popup.style.top = `${top}px`;
+    popup.style.display = "flex";
 }
 
 function showToast(message) {
@@ -349,6 +482,7 @@ async function loadUnderlineState() {
     const [syncSettings, localSettings] = await Promise.all([
         browser.storage.sync.get([
             UNDERLINE_SETTING_KEY,
+            SELECTION_POPUP_ENABLED_KEY,
             "hotkey",
             NOTEBOOK_SHORTCUT_KEY,
             TOGGLE_LOOKUP_SHORTCUT_KEY,
@@ -374,6 +508,7 @@ async function loadUnderlineState() {
     }
 
     state.underlineStudiedWords = Boolean(syncSettings[UNDERLINE_SETTING_KEY]);
+    state.selectionPopupEnabled = syncSettings[SELECTION_POPUP_ENABLED_KEY] ?? true;
     state.studiedWords = parseStudiedWords(localSettings[NOTEBOOK_KEY] || "");
 }
 
@@ -399,6 +534,15 @@ browser.storage.onChanged.addListener((changes, areaName) => {
             state.underlineStudiedWords = Boolean(changes[UNDERLINE_SETTING_KEY].newValue);
             scheduleUnderlineRefresh();
         }
+
+        if (SELECTION_POPUP_ENABLED_KEY in changes) {
+            state.selectionPopupEnabled = Boolean(changes[SELECTION_POPUP_ENABLED_KEY].newValue);
+            if (state.selectionPopupEnabled) {
+                showSelectionPopup();
+            } else {
+                hideSelectionPopup();
+            }
+        }
     }
 
     if (areaName === "local" && NOTEBOOK_KEY in changes) {
@@ -409,18 +553,32 @@ browser.storage.onChanged.addListener((changes, areaName) => {
 
 document.addEventListener("selectionchange", () => {
     state.selectedText = window.getSelection().toString().trim();
+    showSelectionPopup();
     flushPendingRefresh();
 });
 
 document.addEventListener("mousedown", () => {
     state.isPointerSelecting = true;
+    if (!state.isPopupPointerDown) {
+        hideSelectionPopup();
+    }
 });
 
 document.addEventListener("mouseup", () => {
     state.isPointerSelecting = false;
     setTimeout(() => {
+        state.isPopupPointerDown = false;
+        showSelectionPopup();
         flushPendingRefresh();
     }, 80);
+});
+
+document.addEventListener("scroll", () => {
+    hideSelectionPopup();
+}, true);
+
+window.addEventListener("blur", () => {
+    hideSelectionPopup();
 });
 
 document.addEventListener("keydown", (e) => {

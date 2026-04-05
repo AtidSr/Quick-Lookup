@@ -37,6 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         notebookHotkeyInput: document.getElementById("notebookHotkeyInput"),
         notebookOpenMode: document.getElementById("notebookOpenMode"),
         underlineToggle: document.getElementById("underlineToggle"),
+        selectionPopupEnabled: document.getElementById("selectionPopupEnabled"),
         saveBtn: document.getElementById("saveBtn")
     };
 
@@ -48,7 +49,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         "toggleLookupHotkey",
         "notebookHotkey",
         "notebookOpenMode",
-        "underlineStudiedWords"
+        "underlineStudiedWords",
+        "selectionPopupEnabled"
     ]);
 
     elements.dictionarySelect.value = saved.dictionary || "longman";
@@ -56,6 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     elements.lookupShortcutEnabled.checked = saved.lookupShortcutEnabled ?? true;
     elements.notebookOpenMode.value = saved.notebookOpenMode || "popup";
     elements.underlineToggle.checked = Boolean(saved.underlineStudiedWords);
+    elements.selectionPopupEnabled.checked = saved.selectionPopupEnabled ?? true;
 
     let currentShortcut = saved.hotkey || DEFAULT_LOOKUP_SHORTCUT;
     let currentToggleLookupShortcut = saved.toggleLookupHotkey || DEFAULT_TOGGLE_LOOKUP_SHORTCUT;
@@ -154,7 +157,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             toggleLookupHotkey: currentToggleLookupShortcut,
             notebookHotkey: currentNotebookShortcut,
             notebookOpenMode: elements.notebookOpenMode.value,
-            underlineStudiedWords: elements.underlineToggle.checked
+            underlineStudiedWords: elements.underlineToggle.checked,
+            selectionPopupEnabled: elements.selectionPopupEnabled.checked
         });
 
         const originalText = elements.saveBtn.textContent;
