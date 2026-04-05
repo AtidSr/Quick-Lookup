@@ -91,34 +91,58 @@ function sortAnalyticsEntries(analytics) {
     });
 }
 
-function renderMetricCard(label, value, note) {
-    return `
-        <article class="metric-card">
-          <span class="metric-label">${label}</span>
-          <strong class="metric-value">${value}</strong>
-          <span class="metric-note">${note}</span>
-        </article>
-    `;
+function replaceChildren(element, children) {
+    element.replaceChildren(...children);
 }
 
-function renderWordList(entries, emptyMessage) {
-    if (entries.length === 0) {
-        return `<p class="list-empty">${emptyMessage}</p>`;
+function createElement(tagName, className, textContent) {
+    const element = document.createElement(tagName);
+
+    if (className) {
+        element.className = className;
     }
 
-    return `
-        <ul class="word-ranking">
-          ${entries.map((entry) => `
-            <li>
-              <span>${entry.word}</span>
-              <strong>${entry.lookupCount} ${entry.lookupCount === 1 ? "lookup" : "lookups"}</strong>
-            </li>
-          `).join("")}
-        </ul>
-    `;
+    if (textContent !== undefined) {
+        element.textContent = textContent;
+    }
+
+    return element;
 }
 
-function renderWeeklyProgress(analytics) {
+function createMetricCard(label, value, note) {
+    const article = createElement("article", "metric-card");
+    article.append(
+        createElement("span", "metric-label", label),
+        createElement("strong", "metric-value", String(value)),
+        createElement("span", "metric-note", note)
+    );
+    return article;
+}
+
+function createEmptyState(message, className = "list-empty") {
+    return createElement("p", className, message);
+}
+
+function createWordList(entries, emptyMessage) {
+    if (entries.length === 0) {
+        return createEmptyState(emptyMessage);
+    }
+
+    const list = createElement("ul", "word-ranking");
+
+    for (const entry of entries) {
+        const item = createElement("li");
+        item.append(
+            createElement("span", "", entry.word),
+            createElement("strong", "", `${entry.lookupCount} ${entry.lookupCount === 1 ? "lookup" : "lookups"}`)
+        );
+        list.appendChild(item);
+    }
+
+    return list;
+}
+
+function createWeeklyProgress(analytics) {
     const buckets = getWeekBuckets();
 
     for (const entry of Object.values(analytics)) {
@@ -130,44 +154,59 @@ function renderWeeklyProgress(analytics) {
     }
 
     const maxCount = Math.max(...buckets.map((bucket) => bucket.count), 1);
+    const wrapper = createElement("div", "weekly-bars");
 
-    return `
-        <div class="weekly-bars">
-          ${buckets.map((bucket) => `
-            <div class="weekly-bar-card">
-              <div class="weekly-bar-track">
-                <div class="weekly-bar-fill" style="height: ${Math.max((bucket.count / maxCount) * 100, bucket.count > 0 ? 12 : 0)}%"></div>
-              </div>
-              <strong>${bucket.count}</strong>
-              <span>${bucket.label}</span>
-            </div>
-          `).join("")}
-        </div>
-    `;
+    for (const bucket of buckets) {
+        const card = createElement("div", "weekly-bar-card");
+        const track = createElement("div", "weekly-bar-track");
+        const fill = createElement("div", "weekly-bar-fill");
+        fill.style.height = `${Math.max((bucket.count / maxCount) * 100, bucket.count > 0 ? 12 : 0)}%`;
+        track.appendChild(fill);
+
+        card.append(
+            track,
+            createElement("strong", "", String(bucket.count)),
+            createElement("span", "", bucket.label)
+        );
+        wrapper.appendChild(card);
+    }
+
+    return wrapper;
 }
 
-function renderActivityFeed(entries) {
+function createInsightPill(text, value, className = "insight-pill") {
+    const pill = createElement("div", className);
+    pill.append(document.createTextNode(text));
+    pill.appendChild(createElement("strong", "", value));
+    return pill;
+}
+
+function createActivityFeed(entries) {
     if (entries.length === 0) {
-        return `<p class="list-empty">${DASHBOARD_EMPTY_STATE}</p>`;
+        return createEmptyState(DASHBOARD_EMPTY_STATE);
     }
 
     const latest = [...entries]
         .sort((left, right) => new Date(right.lastLookupAt).getTime() - new Date(left.lastLookupAt).getTime())
         .slice(0, 6);
 
-    return `
-        <ul class="activity-feed">
-          ${latest.map((entry) => `
-            <li>
-              <div>
-                <strong>${entry.word}</strong>
-                <span>Last checked ${formatRelativeDate(entry.lastLookupAt)}</span>
-              </div>
-              <b>${entry.lookupCount}</b>
-            </li>
-          `).join("")}
-        </ul>
-    `;
+    const list = createElement("ul", "activity-feed");
+
+    for (const entry of latest) {
+        const item = createElement("li");
+        const info = createElement("div");
+        info.append(
+            createElement("strong", "", entry.word),
+            createElement("span", "", `Last checked ${formatRelativeDate(entry.lastLookupAt)}`)
+        );
+        item.append(
+            info,
+            createElement("b", "", String(entry.lookupCount))
+        );
+        list.appendChild(item);
+    }
+
+    return list;
 }
 
 function buildDashboardData(markdown, analytics) {
@@ -245,26 +284,26 @@ async function renderAnalyticsPage() {
         ? "lookup recorded across your study notebook"
         : "lookups recorded across your study notebook";
 
-    elements.summary.innerHTML = [
-        renderMetricCard("Words learned", dashboard.learnedWords, "Unique words saved in your notebook"),
-        renderMetricCard("New words this week", dashboard.wordsThisWeek, "Vocabulary added in the last 7 days"),
-        renderMetricCard("Average revisits", dashboard.learnedWords ? (dashboard.totalLookups / dashboard.learnedWords).toFixed(1) : "0.0", "Lookup depth per saved word"),
-        renderMetricCard("Review pool", dashboard.leastLookedUp.length, "Low-activity words ready for review")
-    ].join("");
+    replaceChildren(elements.summary, [
+        createMetricCard("Words learned", dashboard.learnedWords, "Unique words saved in your notebook"),
+        createMetricCard("New words this week", dashboard.wordsThisWeek, "Vocabulary added in the last 7 days"),
+        createMetricCard("Average revisits", dashboard.learnedWords ? (dashboard.totalLookups / dashboard.learnedWords).toFixed(1) : "0.0", "Lookup depth per saved word"),
+        createMetricCard("Review pool", dashboard.leastLookedUp.length, "Low-activity words ready for review")
+    ]);
 
     const topWord = dashboard.mostLookedUp[0];
-    elements.insights.innerHTML = topWord
-        ? `
-            <div class="insight-pill accent">Most looked up: <strong>${topWord.word}</strong></div>
-            <div class="insight-pill">Top count: <strong>${topWord.lookupCount}</strong></div>
-            <div class="insight-pill">Least active set: <strong>${dashboard.leastLookedUp.map((entry) => entry.word).join(", ") || "None yet"}</strong></div>
-          `
-        : `<p class="dashboard-empty">${DASHBOARD_EMPTY_STATE}</p>`;
+    replaceChildren(elements.insights, topWord
+        ? [
+            createInsightPill("Most looked up: ", topWord.word, "insight-pill accent"),
+            createInsightPill("Top count: ", String(topWord.lookupCount)),
+            createInsightPill("Least active set: ", dashboard.leastLookedUp.map((entry) => entry.word).join(", ") || "None yet")
+        ]
+        : [createEmptyState(DASHBOARD_EMPTY_STATE, "dashboard-empty")]);
 
-    elements.weeklyProgress.innerHTML = renderWeeklyProgress(dashboard.analytics);
-    elements.frequentWords.innerHTML = renderWordList(dashboard.mostLookedUp, "Your most looked-up words will appear here.");
-    elements.rareWords.innerHTML = renderWordList(dashboard.leastLookedUp, "Your least looked-up words will appear here.");
-    elements.activityFeed.innerHTML = renderActivityFeed(dashboard.entries);
+    replaceChildren(elements.weeklyProgress, [createWeeklyProgress(dashboard.analytics)]);
+    replaceChildren(elements.frequentWords, [createWordList(dashboard.mostLookedUp, "Your most looked-up words will appear here.")]);
+    replaceChildren(elements.rareWords, [createWordList(dashboard.leastLookedUp, "Your least looked-up words will appear here.")]);
+    replaceChildren(elements.activityFeed, [createActivityFeed(dashboard.entries)]);
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
