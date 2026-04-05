@@ -66,7 +66,7 @@
         radial-gradient(circle at 95% 20%, rgba(31, 160, 230, 0.15), transparent 26%),
         linear-gradient(100deg, var(--bg-alt), var(--bg));
       color: var(--text);
-      font-family: "Segoe UI", "Noto Sans", system-ui, sans-serif;
+      font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
     }
 
     .app-shell {
@@ -92,6 +92,7 @@
       gap: 12px;
       align-items: center;
       padding: 12px;
+      min-height: 86px;
       border-radius: 18px;
       background: var(--surface);
       border: 1px solid var(--border);
@@ -122,6 +123,7 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      margin-top: 4px;
     }
 
     .nav-link {
@@ -129,6 +131,7 @@
       align-items: center;
       gap: 10px;
       padding: 12px 14px;
+      min-height: 64px;
       border-radius: 14px;
       color: var(--text);
       text-decoration: none;
@@ -163,6 +166,7 @@
     .sidebar-note {
       margin-top: auto;
       padding: 14px;
+      min-height: 96px;
       border-radius: 16px;
       background: var(--surface);
       border: 1px solid var(--border);
@@ -586,7 +590,7 @@
         <img src="icons/icon-128.png" alt="Quick Lookup icon">
         <div>
           <h1>Quick Lookup</h1>
-          <p>Study words with a notebook flow.</p>
+          <p>Dictionary shortcut and study notebook.</p>
         </div>
       </div>
 
@@ -612,8 +616,7 @@
       </nav>
 
       <div class="sidebar-note">
-        Tip: in <strong>Single Pane</strong> mode, preview becomes the main view so you can review notes without editor
-        noise.
+        Move between Notebook, Analytics, and Settings without the navigation shifting around.
       </div>
     </aside>
 
