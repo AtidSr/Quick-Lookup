@@ -30,6 +30,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         customUrlInput: document.getElementById("customUrl"),
         hotkeyInput: document.getElementById("hotkeyInput"),
         lookupShortcutEnabled: document.getElementById("lookupShortcutEnabled"),
+        lookupStatusDot: document.getElementById("lookupStatusDot"),
+        lookupStatusLabel: document.getElementById("lookupStatusLabel"),
+        lookupStatusText: document.getElementById("lookupStatusText"),
         toggleLookupHotkeyInput: document.getElementById("toggleLookupHotkeyInput"),
         notebookHotkeyInput: document.getElementById("notebookHotkeyInput"),
         notebookOpenMode: document.getElementById("notebookOpenMode"),
@@ -64,8 +67,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     const updateVisibility = () => {
         elements.customFields.classList.toggle("hidden", elements.dictionarySelect.value !== "custom");
     };
+
+    const updateLookupStatus = () => {
+        const isEnabled = elements.lookupShortcutEnabled.checked;
+        elements.lookupStatusDot.classList.toggle("active", isEnabled);
+        elements.lookupStatusLabel.textContent = isEnabled ? "Active" : "Not Active";
+        elements.lookupStatusText.textContent = isEnabled
+            ? "Popup shortcut is active"
+            : "Popup shortcut is not active";
+    };
+
     elements.dictionarySelect.addEventListener("change", updateVisibility);
+    elements.lookupShortcutEnabled.addEventListener("change", updateLookupStatus);
     updateVisibility();
+    updateLookupStatus();
 
     const attachShortcutRecorder = (input, onCommit) => {
         input.addEventListener("keydown", (e) => {

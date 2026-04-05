@@ -19,6 +19,8 @@
       --accent-hover: #0250bb;
       --accent-soft: rgba(0, 97, 224, 0.12);
       --shadow: 0 18px 44px rgba(80, 80, 120, 0.14);
+      --status-on: #1f9d55;
+      --status-off: #d64545;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -35,6 +37,8 @@
         --accent-hover: #80ebff;
         --accent-soft: rgba(0, 221, 255, 0.15);
         --shadow: 0 22px 48px rgba(0, 0, 0, 0.35);
+        --status-on: #59d98e;
+        --status-off: #ff7b7b;
       }
     }
 
@@ -252,10 +256,49 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
+      width: 100%;
     }
 
     .toggle-copy strong {
       font-size: 0.98rem;
+    }
+
+    .status-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--status-off);
+      box-shadow: 0 0 0 4px rgba(214, 69, 69, 0.12);
+      transition: background 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .status-dot.active {
+      background: var(--status-on);
+      box-shadow: 0 0 0 4px rgba(31, 157, 85, 0.14);
+    }
+
+    .status-text {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .inline-shortcut {
+      margin-top: 10px;
+    }
+
+    .inline-shortcut label {
+      margin-bottom: 6px;
+      font-size: 0.92rem;
     }
 
     button {
@@ -360,20 +403,22 @@
           </div>
 
           <div class="field">
-            <label for="lookupShortcutEnabled">Popup Shortcut Status</label>
+            <label for="lookupShortcutEnabled">Activate Status</label>
             <div class="toggle-row">
               <input id="lookupShortcutEnabled" type="checkbox">
               <div class="toggle-copy">
-                <strong>Enable popup lookup shortcut</strong>
+                <div class="status-line">
+                  <span id="lookupStatusDot" class="status-dot active" aria-hidden="true"></span>
+                  <strong id="lookupStatusLabel">Active</strong>
+                </div>
+                <span id="lookupStatusText" class="status-text">Popup shortcut is active</span>
+                <div class="inline-shortcut">
+                  <label for="toggleLookupHotkeyInput">Toggle Popup Shortcut Key</label>
+                  <input id="toggleLookupHotkeyInput" type="text" placeholder="Press a key..." readonly>
+                </div>
                 <span class="hint">Turn the main save-and-open-popup shortcut on or off without changing your saved shortcut.</span>
               </div>
             </div>
-          </div>
-
-          <div class="field">
-            <label for="toggleLookupHotkeyInput">Toggle Popup Shortcut Key</label>
-            <input id="toggleLookupHotkeyInput" type="text" placeholder="Press a key..." readonly>
-            <p class="hint">Use this shortcut to activate or deactivate the popup lookup shortcut instantly, for example <code>Ctrl + Alt + L</code>.</p>
           </div>
 
           <div class="field">
