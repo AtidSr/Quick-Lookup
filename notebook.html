@@ -21,6 +21,12 @@
       --shadow: 0 18px 48px rgba(65, 70, 115, 0.18);
       --status-error: #c43b34;
       --preview-code: #f1f3fb;
+      --button-primary-bg: #1846cf;
+      --button-primary-hover: #1238ab;
+      --button-neutral-bg: #f4f6fd;
+      --button-neutral-hover: #e8ecf8;
+      --button-active-bg: #dce7ff;
+      --button-active-border: rgba(26, 77, 232, 0.34);
     }
 
     @media (prefers-color-scheme: dark) {
@@ -39,6 +45,12 @@
         --shadow: 0 24px 54px rgba(0, 0, 0, 0.34);
         --status-error: #ff9389;
         --preview-code: #24283a;
+        --button-primary-bg: #67c4ff;
+        --button-primary-hover: #8dd4ff;
+        --button-neutral-bg: #2a2d40;
+        --button-neutral-hover: #32364c;
+        --button-active-bg: rgba(103, 196, 255, 0.18);
+        --button-active-border: rgba(103, 196, 255, 0.36);
       }
     }
 
@@ -160,6 +172,8 @@
     }
 
     .main {
+      display: flex;
+      flex-direction: column;
       padding: 28px;
       animation: page-in 240ms ease-out;
     }
@@ -169,6 +183,7 @@
         opacity: 0.4;
         transform: translateY(8px);
       }
+
       to {
         opacity: 1;
         transform: translateY(0);
@@ -176,22 +191,22 @@
     }
 
     .workspace {
-      max-width: 1180px;
-      margin: 0 auto;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(12px);
-      overflow: hidden;
+      display: contents;
     }
 
     .hero {
+      width: min(1180px, 100%);
+      margin: 0 auto;
       padding: 26px 28px;
-      border-bottom: 1px solid var(--border);
       background:
         radial-gradient(circle at top right, rgba(31, 160, 230, 0.14), transparent 32%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
+        var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px 24px 0 0;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
     }
 
     .hero h2 {
@@ -207,19 +222,84 @@
       line-height: 1.65;
     }
 
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      padding: 20px 28px 0;
+    .toolbar-shell {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 0;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
     }
 
-    .button-row {
+    .toolbar {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      margin-top: 0;
+      background: transparent;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .toolbar-side {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+    }
+
+    .toolbar-group {
+      display: flex;
+      flex-wrap: nowrap;
       gap: 10px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .toolbar-group.actions {
+      flex: 0 1 auto;
+    }
+
+    .toolbar-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+      padding: 0;
+    }
+
+    .toolbar-card.actions-card {
+      justify-content: center;
+    }
+
+    .toolbar-card.hidden {
+      display: none;
+    }
+
+    .toolbar-meta {
+      display: flex;
+    }
+
+    .info-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-muted);
+      color: var(--text);
+      font-size: 0.74rem;
+      font-weight: 700;
+      flex: 0 0 auto;
+      cursor: help;
     }
 
     button {
@@ -228,7 +308,7 @@
       padding: 10px 16px;
       cursor: pointer;
       font: inherit;
-      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, color 0.18s ease;
     }
 
     button:hover {
@@ -236,89 +316,80 @@
     }
 
     .primary {
-      background: var(--accent);
+      background: var(--button-primary-bg);
       color: #ffffff;
     }
 
     .primary:hover {
-      background: var(--accent-hover);
+      background: var(--button-primary-hover);
     }
 
     .secondary {
-      background: var(--surface-strong);
+      background: var(--button-neutral-bg);
       color: var(--text);
       border-color: var(--border);
     }
 
     .secondary:hover {
-      background: var(--surface-muted);
+      background: var(--button-neutral-hover);
     }
 
     .toggle-button.active {
-      background: var(--accent-soft);
-      border-color: rgba(26, 77, 232, 0.32);
+      background: var(--button-active-bg);
+      border-color: var(--button-active-border);
       color: var(--text);
       font-weight: 600;
     }
 
-    .controls-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      padding: 14px 28px 0;
-    }
-
-    .control-card {
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px;
-      background: var(--surface-strong);
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .control-head {
-      display: flex;
-      justify-content: space-between;
+    .icon-button {
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      font-size: 1.05rem;
+      line-height: 1;
     }
 
-    .control-head h3 {
-      margin: 0;
-      font-size: 0.95rem;
-      letter-spacing: 0.01em;
-    }
-
-    .control-head span {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      background: var(--surface-muted);
-      padding: 2px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
+    .icon-button svg {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .control-buttons {
       display: flex;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 8px;
+      align-items: center;
     }
 
-    .control-help {
-      margin: 0;
-      font-size: 0.86rem;
-      line-height: 1.45;
+    .position-buttons {
+      gap: 6px;
+    }
+
+    .position-separator {
       color: var(--text-muted);
-    }
-
-    .control-card.hidden {
-      display: none;
+      font-size: 1rem;
+      line-height: 1;
+      user-select: none;
     }
 
     .content {
-      padding: 18px 28px 28px;
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 6px 28px 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 0;
+      border-radius: 0 0 24px 24px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
     }
 
     .status-row {
@@ -468,11 +539,14 @@
       }
 
       .hero,
-      .toolbar,
-      .controls-grid,
+      .toolbar-shell,
       .content {
         padding-left: 18px;
         padding-right: 18px;
+      }
+
+      .toolbar-shell {
+        top: 0;
       }
 
       .workbench[data-layout="split"] {
@@ -481,19 +555,24 @@
     }
 
     @media (max-width: 680px) {
-      .controls-grid {
-        grid-template-columns: 1fr;
-      }
 
       .toolbar,
-      .button-row,
+      .toolbar-group,
+      .toolbar-side,
       .control-buttons {
         width: 100%;
       }
 
-      .button-row button,
+      .toolbar-group button,
       .control-buttons button {
-        flex: 1 1 100%;
+        flex: 1 1 auto;
+      }
+
+      .toolbar-card,
+      .toolbar-card,
+      .toolbar-side {
+        width: 100%;
+        margin-left: 0;
       }
     }
   </style>
@@ -526,7 +605,8 @@
       </nav>
 
       <div class="sidebar-note">
-        Tip: in <strong>Single Pane</strong> mode, preview becomes the main view so you can review notes without editor noise.
+        Tip: in <strong>Single Pane</strong> mode, preview becomes the main view so you can review notes without editor
+        noise.
       </div>
     </aside>
 
@@ -535,42 +615,89 @@
         <header class="hero">
           <div>
             <h2>Word Notebook</h2>
-            <p>Position mode controls where panes appear. Edit mode controls which pane is active only when using same-position layout.</p>
           </div>
         </header>
 
-        <section class="toolbar">
-          <div class="button-row">
-            <button id="saveNotebookBtn" class="primary">Save Notebook</button>
-            <button id="exportNotebookBtn" class="secondary">Export Markdown</button>
-            <button id="importNotebookBtn" class="secondary">Import Markdown</button>
-          </div>
-          <input id="importFileInput" type="file" accept=".md,text/markdown,text/plain">
-        </section>
+        <section class="toolbar-shell">
+          <div class="toolbar">
+            <div class="toolbar-card actions-card">
+              <div class="toolbar-group actions">
+                <button id="saveNotebookBtn" class="primary icon-button" type="button" title="Save Notebook"
+                  aria-label="Save Notebook">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 4h11l3 3v13H5z"></path>
+                    <path d="M8 4v6h8V4"></path>
+                    <path d="M9 19h6"></path>
+                  </svg>
+                </button>
+                <button id="importNotebookBtn" class="secondary icon-button" type="button" title="Import Markdown"
+                  aria-label="Import Markdown">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 4v11"></path>
+                    <path d="M8 11l4 4 4-4"></path>
+                    <path d="M5 19h14"></path>
+                  </svg>
+                </button>
+                <button id="exportNotebookBtn" class="secondary icon-button" type="button" title="Export Markdown"
+                  aria-label="Export Markdown">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 20V9"></path>
+                    <path d="M8 13l4-4 4 4"></path>
+                    <path d="M5 5h14"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <input id="importFileInput" type="file" accept=".md,text/markdown,text/plain">
 
-        <section class="controls-grid">
-          <div class="control-card">
-            <div class="control-head">
-              <h3>View Layout</h3>
-              <span>Layout</span>
-            </div>
-            <div class="control-buttons" role="group" aria-label="Notebook view layout">
-              <button id="singleLayoutBtn" class="secondary toggle-button active" type="button">Single Pane</button>
-              <button id="splitLayoutBtn" class="secondary toggle-button" type="button">Split View</button>
-            </div>
-            <p class="control-help">Selecting <strong>Single Pane</strong> hides the editor first and shows preview. Select <strong>Edit Markdown</strong> to return to editing.</p>
-          </div>
+            <div class="toolbar-side">
+              <div id="modeCard" class="toolbar-card">
+                <div class="control-buttons" role="tablist" aria-label="Notebook edit mode">
+                  <button id="editModeBtn" class="secondary toggle-button icon-button active" type="button" role="tab"
+                    aria-selected="true" title="Edit Markdown" aria-label="Edit Markdown">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M4 20l4.5-1 8.8-8.8-3.5-3.5L5 15.5z"></path>
+                      <path d="M13.8 6.7l3.5 3.5"></path>
+                    </svg>
+                  </button>
+                  <button id="previewModeBtn" class="secondary toggle-button icon-button" type="button" role="tab"
+                    aria-selected="false" title="Preview Markdown" aria-label="Preview Markdown">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"></path>
+                      <circle cx="12" cy="12" r="2.5"></circle>
+                    </svg>
+                  </button>
+                  <div class="toolbar-meta">
+                    <span class="info-badge" aria-label="Edit mode switches the active pane in single view."
+                      title="Edit mode switches the active pane in single view." role="img">i</span>
+                  </div>
+                  <span class="position-separator" aria-hidden="true">|</span>
+                </div>
 
-          <div id="modeCard" class="control-card">
-            <div class="control-head">
-              <h3>Edit Mode</h3>
-              <span>Single layout only</span>
+              </div>
+
+              <div class="toolbar-card layout-card">
+                <div class="control-buttons position-buttons" role="group" aria-label="Notebook view layout">
+                  <button id="singleLayoutBtn" class="secondary toggle-button icon-button active" type="button"
+                    title="Single Pane" aria-label="Single Pane">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="5" y="6" width="14" height="12" rx="1.5"></rect>
+                    </svg>
+                  </button>
+                  <button id="splitLayoutBtn" class="secondary toggle-button icon-button" type="button"
+                    title="Split View" aria-label="Split View">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="4" y="6" width="16" height="12" rx="1.5"></rect>
+                      <path d="M12 6v12"></path>
+                    </svg>
+                  </button>
+                  <div class="toolbar-meta">
+                    <span class="info-badge" aria-label="Position chooses one pane or side-by-side view."
+                      title="Position chooses one pane or side-by-side view." role="img">i</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="control-buttons" role="tablist" aria-label="Notebook edit mode">
-              <button id="editModeBtn" class="secondary toggle-button active" type="button" role="tab" aria-selected="true">Edit Markdown</button>
-              <button id="previewModeBtn" class="secondary toggle-button" type="button" role="tab" aria-selected="false">Preview Markdown</button>
-            </div>
-            <p class="control-help">Use these switches only in same-position layout. In side-by-side layout, both panes are shown together.</p>
           </div>
         </section>
 
@@ -588,7 +715,8 @@
           </div>
 
           <p class="footer">
-            Single-pane layout keeps one pane at a time. Split view shows both panes together and auto-hides edit-mode controls for a cleaner workspace.
+            Single-pane layout keeps one pane at a time. Split view shows both panes together and auto-hides edit-mode
+            controls for a cleaner workspace.
           </p>
         </section>
       </section>

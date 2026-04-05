@@ -16,22 +16,49 @@ function createWordEntry(word) {
 `;
 }
 
+function normalizeWord(word) {
+    return word.trim().replace(/\s+/g, " ");
+}
+
+function capitalizeWord(word) {
+    return word.replace(/\b([A-Za-z])([A-Za-z'-]*)\b/g, (_, first, rest) => {
+        return first.toUpperCase() + rest.toLowerCase();
+    });
+}
+
+function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function notebookHasWord(notebook, word) {
+    const headingPattern = new RegExp(`^##\\s+${escapeRegex(word)}\\s*$`, "gim");
+    return headingPattern.test(notebook);
+}
+
 async function getNotebookContent() {
     const stored = await browser.storage.local.get(NOTEBOOK_KEY);
     return stored[NOTEBOOK_KEY] || DEFAULT_NOTEBOOK;
 }
 
 async function appendWordToNotebook(word) {
-    const trimmedWord = word.trim();
-    if (!trimmedWord) return;
+    const normalizedWord = normalizeWord(word);
+    if (!normalizedWord) return normalizedWord;
+
+    const capitalizedWord = capitalizeWord(normalizedWord);
 
     const currentNotebook = await getNotebookContent();
+    if (notebookHasWord(currentNotebook, capitalizedWord)) {
+        return capitalizedWord;
+    }
+
     const separator = currentNotebook.endsWith("\n\n") || currentNotebook.length === 0 ? "" : "\n";
-    const nextNotebook = `${currentNotebook}${separator}${createWordEntry(trimmedWord)}`;
+    const nextNotebook = `${currentNotebook}${separator}${createWordEntry(capitalizedWord)}`;
 
     await browser.storage.local.set({
         [NOTEBOOK_KEY]: nextNotebook
     });
+
+    return capitalizedWord;
 }
 
 async function buildLookupUrl(word) {
@@ -132,7 +159,7 @@ browser.runtime.onMessage.addListener(async (message) => {
         case "save-and-lookup":
             if (!message.word) return;
             await appendWordToNotebook(message.word);
-            await openLookupPopup(message.word);
+            await openLookupPopup(normalizeWord(message.word));
             return;
 
         case "open-notebook":

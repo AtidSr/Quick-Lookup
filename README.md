@@ -14,6 +14,7 @@ You can choose between built-in dictionaries (Longman, Cambridge, Oxford) or def
 - Export the notebook to a single `.md` file and import it later
 - Customize multi-key shortcuts such as `Alt + Z`, `Shift + Enter`, or `Ctrl + Alt + K`
 - Turn the popup lookup shortcut on or off with a separate customizable toggle shortcut
+- Automatically capitalize saved words and skip duplicates in the notebook
 - Use built-in dictionary presets or a custom dictionary URL
 
 ---
