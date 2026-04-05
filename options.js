@@ -1,72 +1,109 @@
 document.addEventListener("DOMContentLoaded", async () => {
+    const DEFAULT_LOOKUP_SHORTCUT = {
+        ctrl: false,
+        alt: true,
+        shift: false,
+        meta: false,
+        key: "Alt",
+        display: "Alt"
+    };
+    const DEFAULT_NOTEBOOK_SHORTCUT = {
+        ctrl: false,
+        alt: true,
+        shift: false,
+        meta: false,
+        key: "n",
+        display: "Alt + N"
+    };
+
     const elements = {
         dictionarySelect: document.getElementById("dictionarySelect"),
         customFields: document.getElementById("customFields"),
         customUrlInput: document.getElementById("customUrl"),
         hotkeyInput: document.getElementById("hotkeyInput"),
+        notebookHotkeyInput: document.getElementById("notebookHotkeyInput"),
+        notebookOpenMode: document.getElementById("notebookOpenMode"),
         underlineToggle: document.getElementById("underlineToggle"),
         saveBtn: document.getElementById("saveBtn")
     };
 
-    // 1. Load Settings with a clear fallback
-    const saved = await browser.storage.sync.get(["dictionary", "customUrl", "hotkey", "underlineStudiedWords"]);
+    const saved = await browser.storage.sync.get([
+        "dictionary",
+        "customUrl",
+        "hotkey",
+        "notebookHotkey",
+        "notebookOpenMode",
+        "underlineStudiedWords"
+    ]);
 
     elements.dictionarySelect.value = saved.dictionary || "longman";
     elements.customUrlInput.value = saved.customUrl || "";
+    elements.notebookOpenMode.value = saved.notebookOpenMode || "popup";
     elements.underlineToggle.checked = Boolean(saved.underlineStudiedWords);
 
-    let currentShortcut = saved.hotkey || {
-        ctrl: false, alt: true, shift: false, meta: false,
-        key: "Alt", display: "Alt"
-    };
+    let currentShortcut = saved.hotkey || DEFAULT_LOOKUP_SHORTCUT;
+    let currentNotebookShortcut = saved.notebookHotkey || DEFAULT_NOTEBOOK_SHORTCUT;
     elements.hotkeyInput.value = currentShortcut.display;
+    elements.notebookHotkeyInput.value = currentNotebookShortcut.display;
 
-    // 2. UI Logic: Toggle custom URL visibility
     const updateVisibility = () => {
         elements.customFields.classList.toggle("hidden", elements.dictionarySelect.value !== "custom");
     };
     elements.dictionarySelect.addEventListener("change", updateVisibility);
     updateVisibility();
 
-    // 3. Robust Shortcut Recorder
-    elements.hotkeyInput.addEventListener("keydown", (e) => {
-        e.preventDefault();
+    const attachShortcutRecorder = (input, onCommit) => {
+        input.addEventListener("keydown", (e) => {
+            e.preventDefault();
 
-        // Identify if the key pressed is just a modifier (Ctrl, Alt, etc.)
-        const isModifierOnly = ["Control", "Shift", "Alt", "Meta"].includes(e.key);
+            if (e.key === "Backspace" || e.key === "Delete") {
+                input.value = "";
+                onCommit(null);
+                return;
+            }
 
-        // We only want to finalize the shortcut if a "real" key is pressed
-        const newShortcut = {
-            ctrl: e.ctrlKey,
-            alt: e.altKey,
-            shift: e.shiftKey,
-            meta: e.metaKey,
-            // If it's a modifier, we wait. If it's a key, we save it.
-            key: isModifierOnly ? "" : e.key,
-            display: ""
-        };
+            const isModifierOnly = ["Control", "Shift", "Alt", "Meta"].includes(e.key);
+            const newShortcut = {
+                ctrl: e.ctrlKey,
+                alt: e.altKey,
+                shift: e.shiftKey,
+                meta: e.metaKey,
+                key: isModifierOnly ? "" : e.key,
+                display: ""
+            };
 
-        // Build the display string (e.g., "Ctrl + Shift + L")
-        const parts = [];
-        if (newShortcut.ctrl) parts.push("Ctrl");
-        if (newShortcut.alt) parts.push("Alt");
-        if (newShortcut.shift) parts.push("Shift");
-        if (newShortcut.meta) parts.push("Meta");
-        if (!isModifierOnly) parts.push(e.key.length === 1 ? e.key.toUpperCase() : e.key);
+            const parts = [];
+            if (newShortcut.ctrl) parts.push("Ctrl");
+            if (newShortcut.alt) parts.push("Alt");
+            if (newShortcut.shift) parts.push("Shift");
+            if (newShortcut.meta) parts.push("Meta");
+            if (!isModifierOnly) parts.push(e.key.length === 1 ? e.key.toUpperCase() : e.key);
 
-        newShortcut.display = parts.join(" + ");
-        elements.hotkeyInput.value = newShortcut.display;
+            newShortcut.display = parts.join(" + ");
+            input.value = newShortcut.display;
 
-        // Only update our internal state if a non-modifier key was pressed
-        if (!isModifierOnly) {
-            currentShortcut = newShortcut;
-        }
+            if (!isModifierOnly) {
+                onCommit(newShortcut);
+            }
+        });
+    };
+
+    attachShortcutRecorder(elements.hotkeyInput, (shortcut) => {
+        currentShortcut = shortcut;
     });
 
-    // 4. Save Logic with Feedback
+    attachShortcutRecorder(elements.notebookHotkeyInput, (shortcut) => {
+        currentNotebookShortcut = shortcut;
+    });
+
     elements.saveBtn.addEventListener("click", async () => {
-        if (!currentShortcut.key) {
-            alert("Please press a full key combination (e.g., Alt + L)");
+        if (!currentShortcut?.key) {
+            alert("Please press a full lookup shortcut, for example Alt + L.");
+            return;
+        }
+
+        if (!currentNotebookShortcut?.key) {
+            alert("Please press a full notebook shortcut, for example Alt + N.");
             return;
         }
 
@@ -74,10 +111,11 @@ document.addEventListener("DOMContentLoaded", async () => {
             dictionary: elements.dictionarySelect.value,
             customUrl: elements.customUrlInput.value,
             hotkey: currentShortcut,
+            notebookHotkey: currentNotebookShortcut,
+            notebookOpenMode: elements.notebookOpenMode.value,
             underlineStudiedWords: elements.underlineToggle.checked
         });
 
-        // Professional touch: Change button text instead of a jumpy alert
         const originalText = elements.saveBtn.textContent;
         elements.saveBtn.textContent = "Saved!";
         elements.saveBtn.style.background = "#28a745";

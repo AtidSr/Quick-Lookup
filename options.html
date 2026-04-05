@@ -323,7 +323,7 @@
       </nav>
 
       <div class="sidebar-note">
-        Use these settings to choose your dictionary and capture a shortcut that saves a word before opening lookup.
+        Use these settings to choose your dictionary, record the lookup shortcut, and decide how the notebook shortcut opens.
       </div>
     </aside>
 
@@ -331,7 +331,7 @@
       <section class="panel">
         <header class="hero">
           <h2>Settings</h2>
-          <p>Choose how Quick Lookup opens dictionary pages and configure the keyboard shortcut used to save words into your notebook.</p>
+          <p>Choose how Quick Lookup opens dictionary pages, set the lookup shortcut, and add a separate shortcut for opening your notebook in a popup or a tab.</p>
         </header>
 
         <section class="content">
@@ -357,6 +357,21 @@
             <label for="hotkeyInput">Activation Key</label>
             <input id="hotkeyInput" type="text" placeholder="Press a key..." readonly>
             <p class="hint">Record a complete combination such as <code>Alt + L</code> or <code>Ctrl + Shift + D</code>.</p>
+          </div>
+
+          <div class="field">
+            <label for="notebookHotkeyInput">Notebook Shortcut</label>
+            <input id="notebookHotkeyInput" type="text" placeholder="Press a key..." readonly>
+            <p class="hint">Use a separate shortcut such as <code>Alt + N</code> to open the notebook quickly from any page.</p>
+          </div>
+
+          <div class="field">
+            <label for="notebookOpenMode">Notebook Opens As</label>
+            <select id="notebookOpenMode">
+              <option value="popup">Popup window</option>
+              <option value="tab">New tab</option>
+            </select>
+            <p class="hint">This affects the notebook shortcut and the toolbar button, so you can choose the view that feels faster for you.</p>
           </div>
 
           <div class="field">

@@ -10,6 +10,7 @@ You can choose between built-in dictionaries (Longman, Cambridge, Oxford) or def
 
 - Select a word and press your shortcut to save it into your notebook and open a dictionary popup
 - Open a dedicated markdown notebook editor from the extension icon
+- Open the notebook with its own editable shortcut, either in a popup window or a new tab
 - Export the notebook to a single `.md` file and import it later
 - Customize multi-key shortcuts such as `Alt + Z`, `Shift + Enter`, or `Ctrl + Alt + K`
 - Use built-in dictionary presets or a custom dictionary URL
@@ -66,6 +67,8 @@ Open the settings page to:
 - choose the dictionary provider
 - enter a custom URL pattern with `{keyword}`
 - record a new activation shortcut
+- record a separate notebook shortcut
+- choose whether the notebook opens in a popup or a tab
 
 ---
 

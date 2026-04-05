@@ -1,7 +1,9 @@
 const NOTEBOOK_KEY = "wordNotebook";
+const NOTEBOOK_OPEN_MODE_KEY = "notebookOpenMode";
 const DEFAULT_NOTEBOOK = `# Word Notebook
 
 `;
+const DEFAULT_NOTEBOOK_OPEN_MODE = "popup";
 
 function createWordEntry(word) {
     return `## ${word}
@@ -70,18 +72,45 @@ async function openLookupPopup(word) {
     });
 }
 
-async function openNotebookPage() {
-    await browser.tabs.create({
-        url: browser.runtime.getURL("notebook.html")
+async function getNotebookOpenMode() {
+    const storedSettings = await browser.storage.sync.get(NOTEBOOK_OPEN_MODE_KEY);
+    return storedSettings[NOTEBOOK_OPEN_MODE_KEY] || DEFAULT_NOTEBOOK_OPEN_MODE;
+}
+
+async function openNotebookPage(openMode) {
+    const targetMode = openMode || await getNotebookOpenMode();
+    const notebookUrl = browser.runtime.getURL("notebook.html");
+
+    if (targetMode === "tab") {
+        await browser.tabs.create({
+            url: notebookUrl
+        });
+        return;
+    }
+
+    await browser.windows.create({
+        url: notebookUrl,
+        type: "popup",
+        width: 980,
+        height: 780
     });
 }
 
 browser.runtime.onInstalled.addListener(async () => {
-    const notebook = await browser.storage.local.get(NOTEBOOK_KEY);
+    const [notebook, syncSettings] = await Promise.all([
+        browser.storage.local.get(NOTEBOOK_KEY),
+        browser.storage.sync.get(NOTEBOOK_OPEN_MODE_KEY)
+    ]);
 
     if (!notebook[NOTEBOOK_KEY]) {
         await browser.storage.local.set({
             [NOTEBOOK_KEY]: DEFAULT_NOTEBOOK
+        });
+    }
+
+    if (!syncSettings[NOTEBOOK_OPEN_MODE_KEY]) {
+        await browser.storage.sync.set({
+            [NOTEBOOK_OPEN_MODE_KEY]: DEFAULT_NOTEBOOK_OPEN_MODE
         });
     }
 });
@@ -99,7 +128,7 @@ browser.runtime.onMessage.addListener(async (message) => {
             return;
 
         case "open-notebook":
-            await openNotebookPage();
+            await openNotebookPage(message.openMode);
             return;
 
         default:

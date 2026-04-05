@@ -1,5 +1,6 @@
 const NOTEBOOK_KEY = "wordNotebook";
 const UNDERLINE_SETTING_KEY = "underlineStudiedWords";
+const NOTEBOOK_SHORTCUT_KEY = "notebookHotkey";
 const UNDERLINE_CLASS = "quick-lookup-studied-word";
 const STYLE_ID = "quick-lookup-studied-style";
 const EXCLUDED_TAGS = new Set([
@@ -24,10 +25,20 @@ const state = {
         meta: false,
         key: "Alt"
     },
+    notebookHotkey: {
+        ctrl: false,
+        alt: true,
+        shift: false,
+        meta: false,
+        key: "n"
+    },
     underlineStudiedWords: false,
     studiedWords: [],
     observer: null,
-    refreshTimer: null
+    refreshTimer: null,
+    isApplyingUnderlines: false,
+    isPointerSelecting: false,
+    pendingRefresh: false
 };
 
 function isEnglishStudyHeading(line) {
@@ -147,54 +158,118 @@ function underlineTextNode(node, regex) {
 }
 
 function applyUnderlines() {
-    clearUnderlines();
-
-    if (!state.underlineStudiedWords || state.studiedWords.length === 0) return;
-
-    ensureUnderlineStyle();
-
-    const regex = buildWordRegex(state.studiedWords);
-    if (!regex) return;
-
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
-        acceptNode(node) {
-            if (!node.nodeValue || !node.nodeValue.trim()) {
-                return NodeFilter.FILTER_REJECT;
-            }
-
-            return isExcludedNode(node)
-                ? NodeFilter.FILTER_REJECT
-                : NodeFilter.FILTER_ACCEPT;
-        }
-    });
-
-    const nodes = [];
-    let currentNode;
-
-    while ((currentNode = walker.nextNode())) {
-        nodes.push(currentNode);
+    if (!document.body) return;
+    if (state.isPointerSelecting || hasActiveSelection()) {
+        state.pendingRefresh = true;
+        return;
     }
 
-    for (const node of nodes) {
-        underlineTextNode(node, regex);
+    state.isApplyingUnderlines = true;
+    const observer = state.observer;
+
+    if (observer) {
+        observer.disconnect();
+    }
+
+    try {
+        clearUnderlines();
+
+        if (!state.underlineStudiedWords || state.studiedWords.length === 0) return;
+
+        ensureUnderlineStyle();
+
+        const regex = buildWordRegex(state.studiedWords);
+        if (!regex) return;
+
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+            acceptNode(node) {
+                if (!node.nodeValue || !node.nodeValue.trim()) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+
+                return isExcludedNode(node)
+                    ? NodeFilter.FILTER_REJECT
+                    : NodeFilter.FILTER_ACCEPT;
+            }
+        });
+
+        const nodes = [];
+        let currentNode;
+
+        while ((currentNode = walker.nextNode())) {
+            nodes.push(currentNode);
+        }
+
+        for (const node of nodes) {
+            underlineTextNode(node, regex);
+        }
+    } finally {
+        state.isApplyingUnderlines = false;
+        if (observer && document.body) {
+            observer.observe(document.body, {
+                childList: true,
+                characterData: true,
+                subtree: true
+            });
+        }
     }
 }
 
 function scheduleUnderlineRefresh() {
+    if (state.isPointerSelecting || hasActiveSelection()) {
+        state.pendingRefresh = true;
+        return;
+    }
+
     if (state.refreshTimer) {
         clearTimeout(state.refreshTimer);
     }
 
     state.refreshTimer = setTimeout(() => {
+        state.pendingRefresh = false;
         applyUnderlines();
     }, 120);
+}
+
+function hasActiveSelection() {
+    const selection = window.getSelection();
+    return Boolean(selection && !selection.isCollapsed && selection.toString().trim());
+}
+
+function isEditableTarget(target) {
+    if (!(target instanceof Element)) return false;
+    if (target.closest("[contenteditable='true']")) return true;
+
+    const editableTagNames = new Set(["INPUT", "TEXTAREA", "SELECT"]);
+    return editableTagNames.has(target.tagName);
+}
+
+function hasModifierConflict(event, shortcut) {
+    return (
+        event.ctrlKey !== Boolean(shortcut.ctrl) ||
+        event.altKey !== Boolean(shortcut.alt) ||
+        event.shiftKey !== Boolean(shortcut.shift) ||
+        event.metaKey !== Boolean(shortcut.meta)
+    );
+}
+
+function matchesShortcut(event, shortcut) {
+    if (!shortcut?.key) return false;
+    if (hasModifierConflict(event, shortcut)) return false;
+    return event.key.toLowerCase() === shortcut.key.toLowerCase();
+}
+
+function flushPendingRefresh() {
+    if (!state.pendingRefresh) return;
+    if (state.isPointerSelecting || hasActiveSelection()) return;
+    scheduleUnderlineRefresh();
 }
 
 function ensureObserver() {
     if (state.observer || !document.body) return;
 
     state.observer = new MutationObserver((mutations) => {
-        if (!state.underlineStudiedWords) return;
+        if (!state.underlineStudiedWords || state.isApplyingUnderlines) return;
 
         const hasRealChange = mutations.some((mutation) => {
             if (mutation.type === "characterData") return true;
@@ -215,12 +290,16 @@ function ensureObserver() {
 
 async function loadUnderlineState() {
     const [syncSettings, localSettings] = await Promise.all([
-        browser.storage.sync.get([UNDERLINE_SETTING_KEY, "hotkey"]),
+        browser.storage.sync.get([UNDERLINE_SETTING_KEY, "hotkey", NOTEBOOK_SHORTCUT_KEY]),
         browser.storage.local.get(NOTEBOOK_KEY)
     ]);
 
     if (syncSettings.hotkey) {
         state.hotkey = syncSettings.hotkey;
+    }
+
+    if (syncSettings[NOTEBOOK_SHORTCUT_KEY]) {
+        state.notebookHotkey = syncSettings[NOTEBOOK_SHORTCUT_KEY];
     }
 
     state.underlineStudiedWords = Boolean(syncSettings[UNDERLINE_SETTING_KEY]);
@@ -231,6 +310,10 @@ browser.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === "sync") {
         if (changes.hotkey?.newValue) {
             state.hotkey = changes.hotkey.newValue;
+        }
+
+        if (changes[NOTEBOOK_SHORTCUT_KEY]?.newValue) {
+            state.notebookHotkey = changes[NOTEBOOK_SHORTCUT_KEY].newValue;
         }
 
         if (UNDERLINE_SETTING_KEY in changes) {
@@ -247,22 +330,36 @@ browser.storage.onChanged.addListener((changes, areaName) => {
 
 document.addEventListener("selectionchange", () => {
     state.selectedText = window.getSelection().toString().trim();
+    flushPendingRefresh();
+});
+
+document.addEventListener("mousedown", () => {
+    state.isPointerSelecting = true;
+});
+
+document.addEventListener("mouseup", () => {
+    state.isPointerSelecting = false;
+    setTimeout(() => {
+        flushPendingRefresh();
+    }, 80);
 });
 
 document.addEventListener("keydown", (e) => {
+    if (isEditableTarget(e.target)) return;
+
+    if (matchesShortcut(e, state.notebookHotkey)) {
+        e.preventDefault();
+        browser.runtime.sendMessage({
+            type: "open-notebook"
+        });
+        return;
+    }
+
     const { hotkey, selectedText } = state;
 
     if (!selectedText) return;
 
-    const modifiersMatch =
-        e.ctrlKey === hotkey.ctrl &&
-        e.altKey === hotkey.alt &&
-        e.shiftKey === hotkey.shift &&
-        e.metaKey === hotkey.meta;
-
-    const keyMatch = e.key.toLowerCase() === hotkey.key.toLowerCase();
-
-    if (modifiersMatch && keyMatch) {
+    if (matchesShortcut(e, hotkey)) {
         e.preventDefault();
         browser.runtime.sendMessage({
             type: "save-and-lookup",
